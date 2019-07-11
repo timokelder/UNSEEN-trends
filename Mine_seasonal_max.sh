@@ -70,10 +70,10 @@ time_start=0
 
 ##### Just for testing
 #I do not use pandas for increased speed
-LSP = infile.variables['LSP'][index_start:index_end+1,(lat_in >= lat_start) & (lat_in <= lat_end),(lon_in >= lon_start) & (lon_in <= lon_end)]
-LSP_diff = LSP[n_event:,:,:] - LSP[:-n_event,:,:] # LSP is cumulative precipitation. Take the 3-day precip
-LSP_diffmax=np.max(LSP_diff, axis=0)*1000 #Take maximum 3day event in the season, convert m to mm
-#np.diff(LSP, n=1, axis=0) for check, doesnt use window
+#LSP = infile.variables['LSP'][index_start:index_end+1,(lat_in >= lat_start) & (lat_in <= lat_end),(lon_in >= lon_start) & (lon_in <= lon_end)]
+#LSP_diff = LSP[n_event:,:,:] - LSP[:-n_event,:,:] # LSP is cumulative precipitation. Take the 3-day precip
+#LSP_diffmax=np.max(LSP_diff, axis=0)*1000 #Take maximum 3day event in the season, convert m to mm
+##np.diff(LSP, n=1, axis=0) for check, doesnt use window
 
 
 ncfile_out = nc.Dataset('//home/timok/timok/SALIENSEAS/SEAS5/ensex/Aggregated_months/seasonSON'+str(date_start.year)+'.nc', 'w')

@@ -41,3 +41,29 @@ lsp_df02[3]=a
 write.table(lsp_df02,'//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/Quantile_ld2/statistics_quantile200.txt' , row.names=FALSE, sep=",")
 
 
+# create and write the netCDF file
+# define dimensions
+londim <- ncdim_def("lon","degrees_east",as.double(longitude)) 
+latdim <- ncdim_def("lat","degrees_north",as.double(latitude)) 
+# timedim <- ncdim_def("time",tunits3,as.double(time3))
+
+# define variables
+P_200_def <- ncvar_def("P_200","mm",list(londim,latdim))
+
+# create netCDF file and put arrays
+ncout <- nc_create('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/Quantile_ld2/Quantiles200.nc',P_200_def)
+
+# put variables
+P_200_array=array(lsp_df02[,3],dim= c(141,100))
+
+ncvar_put(ncout,P_200_def,P_200_array)
+
+# put additional attributes into dimension and data variables
+ncatt_put(ncout,"lon","axis","X") #,verbose=FALSE) #,definemode=FALSE)
+ncatt_put(ncout,"lat","axis","Y")
+
+# Get a summary of the created file:
+ncout
+
+# close the file, writing data to disk
+nc_close(ncout)

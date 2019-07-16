@@ -21,8 +21,8 @@ import glob
 #######Start######
 
 #Domain for the West Coast (WC) and Svalbard (SV) domains
-lats= [58,63]# SV[76,80]
-lons=[4,7] #SV[8,30]
+lats= [76,80] #58,63]# SV[76,80]
+lons=[8,30] #4,7] #SV[8,30]
 
 #Define the season and event duration
 #Watch out with the season selection. In the script I use month-6, so month 1-6 should be 13-18. 
@@ -82,7 +82,7 @@ xr5=xr_5.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=
 xr_q200=xr.open_dataset(dirname+'/ensex/statistics/multiday/Quantile_ld2/Quantiles200.nc')
 
 #The region is selected based on where the climatology (200-year values) are greater than a user-defined threshold
-climatology_threshold=90
+climatology_threshold=35 #90
 
 #Select the regional averaged 3 day cumulative precipitation
 xr_ens2=( xr2['LSP'] #select the large scale precipitation variable
@@ -108,16 +108,16 @@ for i in range(1,ensemble_amount):
     xr3=xr3_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
     xr4=xr4_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
     xr5=xr5_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
-    xr_ens2=xr.concat([xr_ens2,xr2['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>90).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens3=xr.concat([xr_ens3,xr3['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>90).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens4=xr.concat([xr_ens4,xr4['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>90).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens5=xr.concat([xr_ens5,xr5['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>90).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens2=xr.concat([xr_ens2,xr2['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens3=xr.concat([xr_ens3,xr3['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens4=xr.concat([xr_ens4,xr4['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens5=xr.concat([xr_ens5,xr5['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
 
  
 xr_ens_lds=xr.concat([xr_ens2,xr_ens3,xr_ens4,xr_ens5],'leadtime')
 xr_ens_lds=xr_ens_lds.assign_coords(leadtime=lds).assign_coords(ensemble=range(ensemble_amount))
 
-xr_ens_lds.to_netcdf('//home/timok/timok/SALIENSEAS/SEAS5/ensex/Extremes/Ens_lds'+str($SGE_TASK_ID)+'.nc', mode='w')
+xr_ens_lds.to_netcdf('//home/timok/timok/SALIENSEAS/SEAS5/ensex/Extremes/Ens_lds_SV'+str($SGE_TASK_ID)+'.nc', mode='w')
 
 
 EOF

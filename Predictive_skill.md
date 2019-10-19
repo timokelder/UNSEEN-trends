@@ -29,7 +29,7 @@ library(extRemes)
 library(scatterplot3d)
 ```
 
-Open the extremes
+Open the forecasted and observed SON maxima
 
 ``` r
 dir='//home/timok/timok/SALIENSEAS/SEAS5'
@@ -49,9 +49,38 @@ dim(Extremes_WC) # 25 4 35 Ensemble Leadtime Year
 dimnames(Extremes_WC) = list(as.character(0:24),as.character(2:5),as.character(1981:2015))
 dimnames(Extremes_SV) = list(as.character(0:24),as.character(2:5),as.character(1981:2015))
 
-Extremes_array= Extremes_WC# Note to self: previously was 4 25 35
+Extremes_array= Extremes_WC
 ```
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+Define predictor and predictant and standardize
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed. Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+``` r
+predictant=as.vector(Extremes_array[1,'2',]) #First member, first leadtime that we use in this study
+predictor=apply(Extremes_array,MARGIN = c(2,3),FUN=mean) #predictor['2','1987']
+
+#Standarized anomaly
+calc_anomaly <- function(variable) {
+  (variable-mean(variable))/sd(variable)
+}
+predictor_anomaly=apply(predictor,MARGIN = 1 , FUN=calc_anomaly)
+
+# predictant_anomaly=
+```
+
+Calculate the correlation
+
+``` r
+#Use spearman to avoid normality assumptions
+cor_coeff='spearman'
+correlation_test <- function(predictant_anomaly,predictor_anomaly) {
+  
+correlation=cor.test(predictant_anomaly,predictor_anomaly,alternative = 'two.sided',method = cor_coeff) #alternative hypothesis is that the population correlation is greater than 0. -> we don't expect negative correlations? 
+return(correlation$estimate)}# correlation$p.value
+# correlation$estimate
+```
+
+``` r
+plot(1981:2015,predictor_anomaly[,'2'])
+```
+
+![](Predictive_skill_files/figure-markdown_github/unnamed-chunk-6-1.png)

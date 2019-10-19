@@ -87,15 +87,15 @@ climatology_threshold=35 #90
 #Select the regional averaged 3 day cumulative precipitation
 xr_ens2=( xr2['LSP'] #select the large scale precipitation variable
 .diff('time') #the LSP is cumulative precipitation -> convert this to daily precip
-.rolling(time=3).sum() #our target events are 3-day events -> convert daily to 3 day cumulative
+.rolling(time=3).sum().dropna('time') #our target events are 3-day events -> convert daily to 3 day cumulative. Remove the NA that result from the rolling window
 .where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']) #Select the regional average where the climatology is greater than 90 
 .max(dim='time')*1000 #Select the maximum value for this season
 )
 
 #Same for the other lead times
-xr_ens3=xr3['LSP'].diff('time').rolling(time=3).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
-xr_ens4=xr4['LSP'].diff('time').rolling(time=3).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
-xr_ens5=xr5['LSP'].diff('time').rolling(time=3).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
+xr_ens3=xr3['LSP'].diff('time').rolling(time=3).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
+xr_ens4=xr4['LSP'].diff('time').rolling(time=3).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
+xr_ens5=xr5['LSP'].diff('time').rolling(time=3).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000
 
 
 for i in range(1,ensemble_amount):
@@ -108,10 +108,10 @@ for i in range(1,ensemble_amount):
     xr3=xr3_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
     xr4=xr4_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
     xr5=xr5_i.sel(time=slice(season_start,season_end),lon=slice(lons[0],lons[1]),lat=slice(lats[0],lats[1])).drop(['SSTK','CI']) #drop the unnecessary variables
-    xr_ens2=xr.concat([xr_ens2,xr2['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens3=xr.concat([xr_ens3,xr3['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens4=xr.concat([xr_ens4,xr4['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
-    xr_ens5=xr.concat([xr_ens5,xr5['LSP'].diff('time').rolling(time=time_event).sum().where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens2=xr.concat([xr_ens2,xr2['LSP'].diff('time').rolling(time=time_event).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens3=xr.concat([xr_ens3,xr3['LSP'].diff('time').rolling(time=time_event).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens4=xr.concat([xr_ens4,xr4['LSP'].diff('time').rolling(time=time_event).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
+    xr_ens5=xr.concat([xr_ens5,xr5['LSP'].diff('time').rolling(time=time_event).sum().dropna('time').where(xr_q200['P_200']>climatology_threshold).mean(dim=['lat','lon']).max(dim='time')*1000],'ensemble')
 
  
 xr_ens_lds=xr.concat([xr_ens2,xr_ens3,xr_ens4,xr_ens5],'leadtime')

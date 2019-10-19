@@ -27,7 +27,7 @@ m_sv = Basemap(llcrnrlon=7.,urcrnrlon=35.,llcrnrlat=75.,urcrnrlat=81.,
              resolution='i', projection='lcc', lat_1=65., lon_0=5.)
 
 cm_data_oslo = np.loadtxt("ScientificColourMaps4/oslo/oslo.txt") #vik#imola or oslo
-Oslo=LinearSegmentedColormap.from_list('CBname', cm_data_oslo)
+Oslo=LinearSegmentedColormap.from_list('CBname', cm_data_oslo)[::-1]
 statistics=pd.read_table('/home/timok/ensex/statistics/multiday/Quantile_ld2/statistics_quantile200.txt',sep=',')#[,2:4]
 
 fig = plt.figure(linewidth=5.5)

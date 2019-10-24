@@ -118,10 +118,10 @@ The correlations are very small. Does it even make sense to continue and calcula
 #obtain observations again
 predictand_anomaly=calc_anomaly(predictand)
 
-require(extrafont)
-extrafont::font_import()  ## first time could take a while
-extrafont::loadfonts()
-ggplot_font <- extrafont::choose_font(c('Helvetica', "Arial"))
+# require(extrafont)
+# extrafont::font_import()  ## first time could take a while
+# extrafont::loadfonts()
+# ggplot_font <- extrafont::choose_font(c('Helvetica', "Arial"))
 
 df <- data.frame(predictand_anomaly,predictor_anomaly) %>%
   select(predictand_anomaly, X2,X3,X4,X5) %>%
@@ -139,7 +139,7 @@ p= ggplot(df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)
 p1 = p + scale_color_grey()
 p2 = p + scale_color_brewer(palette="Dark2")
 p1
-p1
+p2
 # ggsave(p2, filename = paste0(dir,"/ensex/statistics/multiday/ggplot.png"), dpi = 300, type = "cairo")
 
 
@@ -189,5 +189,3 @@ plot(k$V2, k$V1, xlim=c(0,1), ylim=c(0,1), xlab="Mean Prediction", ylab="Observe
 lines(c(0,1),c(0,1), col="grey")
 subplot(hist(pred, xlab="", ylab="", main="", xlim=c(0,1), col="blue"), grconvertX(c(.8, 1), "npc"), grconvertY(c(0.08, .25), "npc"))
 ```
-
-

@@ -71,6 +71,16 @@ lines(1981:2015,predictor_anomaly[,'4'],col='blue')
 lines(1981:2015,predictor_anomaly[,'5'],col='blue')
 ```
 
+Comparing the anomalies. 
+```{r}
+plot(predictant_anomaly,predictor_anomaly[,'2'],type='p',col=2,ylim = c(-2.5,2.5),xlim = c(-2.5,2.5))
+# points(predictant_anomaly,predictor_anomaly[,'2'],col='blue')
+points(predictant_anomaly,predictor_anomaly[,'3'],col=3)
+points(predictant_anomaly,predictor_anomaly[,'4'],col=4)
+points(predictant_anomaly,predictor_anomaly[,'5'],col=5)
+lines(c(-3,3),c(-3,3))
+```
+
 ##Correlations
 Calculate the correlation between the anomalies of the ensemble mean of each lead time and the observations
 ```{r}
@@ -112,6 +122,5 @@ lines(1981:2015,apply(Model_anomalies,MARGIN=1,FUN=min),lty='dashed')
 lines(1981:2015,apply(Model_anomalies,MARGIN=1,FUN=max),lty='dashed')
 
 ```
-
 
 

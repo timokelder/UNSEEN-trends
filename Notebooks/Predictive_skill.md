@@ -77,6 +77,19 @@ lines(1981:2015,predictor_anomaly[,'5'],col='blue')
 
 ![](Predictive_skill_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
+Comparing the anomalies.
+
+``` r
+plot(predictant_anomaly,predictor_anomaly[,'2'],type='p',col=2,ylim = c(-2.5,2.5),xlim = c(-2.5,2.5))
+# points(predictant_anomaly,predictor_anomaly[,'2'],col='blue')
+points(predictant_anomaly,predictor_anomaly[,'3'],col=3)
+points(predictant_anomaly,predictor_anomaly[,'4'],col=4)
+points(predictant_anomaly,predictor_anomaly[,'5'],col=5)
+lines(c(-3,3),c(-3,3))
+```
+
+![](Predictive_skill_files/figure-markdown_github/unnamed-chunk-7-1.png)
+
 Correlations
 ------------
 
@@ -144,4 +157,4 @@ lines(1981:2015,apply(Model_anomalies,MARGIN=1,FUN=min),lty='dashed')
 lines(1981:2015,apply(Model_anomalies,MARGIN=1,FUN=max),lty='dashed')
 ```
 
-![](Predictive_skill_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](Predictive_skill_files/figure-markdown_github/unnamed-chunk-10-1.png)

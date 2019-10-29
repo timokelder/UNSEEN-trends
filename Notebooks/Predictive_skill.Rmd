@@ -1,5 +1,5 @@
 ---
-title: "Predictive_skill"
+title: "Predictive skill"
 author: "Timo Kelder"
 date: "October 19, 2019"
 output: github_document 
@@ -9,64 +9,82 @@ output: github_document
 Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"
 ```
 
-Load the required packages
+## Import data and packages
 
 ```{r}
-library('ncdf4')
-library('ggplot2')
-library("tidyverse")
-options(bitmapType = 'cairo')
-```
-
-## Import data
-Open the forecasted and observed SON maxima 
-```{r}
-
-dir='//home/timok/timok/SALIENSEAS/SEAS5'
-nc=nc_open(paste0(dir,'/ensex/Extremes/Extremes.nc'))#for lonlat
-nc_sv=nc_open(paste0(dir,'/ensex/Extremes/Extremes_SV.nc'))#for lonlat
-nc_obs=nc_open(paste0(dir,'/ensex/Extremes/SeNorge.nc'))#for lonlat
-
-Extremes_WC=ncvar_get(nc)
-Extremes_SV=ncvar_get(nc_sv)
-Extremes_obs=ncvar_get(nc_obs)
-# Extremes_SV
-dim(Extremes_WC) # 25 4 35 Ensemble Leadtime Year 
-
-#There is an error that the dimnames do not get saved from Xarray to_netcdf. Set the dimnames here 
-dimnames(Extremes_WC) = list(as.character(0:24),as.character(2:5),as.character(1981:2015))
-dimnames(Extremes_SV) = list(as.character(0:24),as.character(2:5),as.character(1981:2015))
-dimnames(Extremes_obs) = list(as.character(1957:2018))
-
-```
-
-Define predictor and predictand and standardize
-```{r}
-predictand=as.vector(Extremes_obs[as.character(1981:2015)]) #First member, first leadtime that we use in this study
-predictor=apply(Extremes_WC,MARGIN = c(2,3),FUN=mean) #predictor['2','1987']
-
-#Standarized anomaly
-calc_anomaly <- function(variable) {
-  (variable-mean(variable))/sd(variable)
-}
-predictor_anomaly=apply(predictor,MARGIN = 1 , FUN=calc_anomaly)
-predictand_anomaly=calc_anomaly(predictand)
-
+dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+plotdir=paste0(dir,'/statistics/multiday/plots')
+source('Load_data.R')
 ```
 
 ##Visualize the data
-Plot the observations and the ensemble means of each lead time... Auch
-Clearly, the method cannot be used to calculate design values without downscaling.
+
+Plot the observations and the forecasts for: 
+
+- The raw values for the observations and the forecasts
+- The mean bias corrected forecasts
+- The standardized anomaly for the forecasts and the observations 
+
+
+```{r}
+plot(1981:2015,predictand,type='l',ylim=c(0,175))
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,Extremes_WC[mbr,ld,],col=alpha('blue',0.1))}}
+
+plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80))
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,Extremes_WC[mbr,ld,]-mean(Extremes_WC),col=alpha('blue',0.1))}}
+
+plot(1981:2015,predictand_anomaly,type='l',ylim = c(-2.5,4))
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,calc_anomaly(Extremes_WC[mbr,ld,]),col=alpha('blue',0.1))}}
+
+```
+
+To compare the obervation with the simulations, we show the rank histogram for each of the three plots. The rank histograms illustrates on what rank the observations lie compared to all forecasts. If the simulations are not biased and represent plausible realizations of reality, the observations would be randomly distributed over the range of simulations and the rank histogram would be flat. 
+
+From both the time series and histogram plots, it is clear that the forecast have a lower bias. When corrected for this mean bias, the ranks of the observations seem to be equally distributed over the forecast ranks.   
+
+```{r}
+rank.histogram <- function(pred,obs=NULL) {
+  
+  N <- dim(pred)[2]
+  K <- dim(pred)[1]
+  
+  ranks <- apply(rbind(obs, pred), 2, rank, ties.method="random")[1, ]
+  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5))[["counts"]]
+}
+
+# apply(pred, MARGIN = 3, rank.histogram) #What am I doing wrong?
+
+rank.histogram(rbind(Extremes_WC[,1,],Extremes_WC[,2,],Extremes_WC[,3,],Extremes_WC[,4,]),predictand)
+rank.histogram(rbind(Extremes_WC[,1,],Extremes_WC[,2,],Extremes_WC[,3,],Extremes_WC[,4,])-mean(Extremes_WC),predictand-mean(predictand))
+
+pred=apply(Extremes_WC,MARGIN = c(1,2) , FUN=calc_anomaly)
+
+rank.histogram <- function(pred,obs=NULL) {
+  N <- dim(pred)[1]
+  K <- dim(pred)[2]
+  
+  ranks <- apply(cbind(obs, pred), 1, rank, ties.method="random")[1, ]
+  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5))[["counts"]]
+}
+rank.histogram(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly)
+
+```
+
+Then, for the predictive skill, the mean of the forecasts for each leadtime is used for the raw and standardized data.
+
 ```{r}
 plot(1981:2015,predictand,type='l')
 lines(1981:2015,predictor['2',],col='blue')
 lines(1981:2015,predictor['3',],col='blue')
 lines(1981:2015,predictor['4',],col='blue')
 lines(1981:2015,predictor['5',],col='blue')
-```
 
-And now the anomalies. This is the same as linear bias correction, if I am not mistaken
-```{r}
 plot(1981:2015,predictand_anomaly,type='l')
 lines(1981:2015,predictor_anomaly[,'2'],col='blue')
 lines(1981:2015,predictor_anomaly[,'3'],col='blue')
@@ -74,31 +92,47 @@ lines(1981:2015,predictor_anomaly[,'4'],col='blue')
 lines(1981:2015,predictor_anomaly[,'5'],col='blue')
 ```
 
-Comparing the anomalies. 
+We compare the anomaly of the observations with forecasts for each of the lead times. There is not much of a correlation and the lead times are not significantly different.  
 ```{r}
-plot(predictand_anomaly,predictor_anomaly[,'2'],type='p',col=2,ylim = c(-2.5,2.5),xlim = c(-2.5,2.5))
-# points(predictand_anomaly,predictor_anomaly[,'2'],col='blue')
-points(predictand_anomaly,predictor_anomaly[,'3'],col=3)
-points(predictand_anomaly,predictor_anomaly[,'4'],col=4)
-points(predictand_anomaly,predictor_anomaly[,'5'],col=5)
-lines(c(-3,3),c(-3,3))
+
+df <- data.frame(predictand_anomaly,predictor_anomaly) %>%
+  select(predictand_anomaly, X2,X3,X4,X5) %>%
+  gather(key = "variable", value = "value", -predictand_anomaly)
+
+p= ggplot(df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)) +
+  geom_point() + 
+  geom_smooth(method=lm)+
+  xlim(-2.5, 2.5) +
+  ylim(-2.5, 2.5) +
+  theme_classic() 
+
+# p1 = p + scale_color_grey()
+p2 = p + scale_color_brewer(palette="Dark2")
+# p1
+p2
+
+
 ```
 
+
 ##Correlations
-Calculate the correlation between the anomalies of the ensemble mean of each lead time and the observations
+Calculate the correlation test between the anomalies of the ensemble mean of each lead time and the observations
+
 ```{r}
 #Use spearman to avoid normality assumptions
 cor_coeff='spearman'
 correlation_test <- function(predictor_anomaly) {
   
 correlation=cor.test(predictand_anomaly,predictor_anomaly,alternative = 'two.sided',method = cor_coeff) #alternative hypothesis is that the population correlation is greater than 0. -> we don't expect negative correlations? 
-return(correlation$estimate)}# correlation$p.value
-# correlation$estimate
-
+return(c(correlation$estimate,correlation$p.value))}# 
 apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
 ```
 
-What about the correlation between the different leadtimes?
+The correlations are very small. Does it even make sense to continue and calculate the ratio of predictable components? I don't think so. The main question I have is: Do we trust the trends in the anomalies of the model to be representative of trends in reality (the anomalies of the observations), even if there is no skill? See the forecast reliability notebook. 
+
+
+A little extra: What about the correlation between the different leadtimes? They also have very small correlations
+
 ```{r}
 predictand_anomaly=predictor_anomaly[,'2']
 apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
@@ -112,80 +146,8 @@ apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
 
 ```
 
-The correlations are very small. Does it even make sense to continue and calculate the ratio of predictable components? I don't think so. The main question I have is: Do we trust the trends in the anomalies of the model to be representative of trends in reality (the anomalies of the observations), even if there is no skill?
-
-```{r}
-#obtain observations again
-predictand_anomaly=calc_anomaly(predictand)
-
-# require(extrafont)
-# extrafont::font_import()  ## first time could take a while
-# extrafont::loadfonts()
-# ggplot_font <- extrafont::choose_font(c('Helvetica', "Arial"))
-
-df <- data.frame(predictand_anomaly,predictor_anomaly) %>%
-  select(predictand_anomaly, X2,X3,X4,X5) %>%
-  gather(key = "variable", value = "value", -predictand_anomaly)
-head(df)
-
-# precip_anomalies=data.frame(predictand_anomaly,predictor_anomaly)
-p= ggplot(df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)) +
-  geom_point() + 
-  geom_smooth(method=lm)+
-  xlim(-2.5, 2.5) +
-  ylim(-2.5, 2.5) +
-  theme_classic() 
-
-p1 = p + scale_color_grey()
-p2 = p + scale_color_brewer(palette="Dark2")
-p1
-p2
-# ggsave(p2, filename = paste0(dir,"/ensex/statistics/multiday/ggplot.png"), dpi = 300, type = "cairo")
-
-
-```
 
 
 
-```{r eval=FALSE, include=FALSE}
-
-##I played around with reliability plots, but I don't understand this yet
-require(plyr)
-# library(Hmisc)
-
-scale <- function(variable) {
-  (variable - min(variable)) / (max(variable)-min(variable))
-}
-
-pred=scale(predictor_anomaly)
-obs=scale(predictand_anomaly)
-
-bin.pred <- cut(pred, 10)
-bin.obs <- cut(obs, 10)
-
-for (level in levels(bin.pred)){
-  print(pred[level])
-}
-  
-  k <- ldply(levels(bin.pred), function(x) {
-    idx <- x == bin.pred
-    c(sum(obs[idx]) / length(obs[idx]), mean(pred[idx]))
-  })
-  
-predictions <- ldply(levels(bin.pred), function(x) {
-  idx <- x == bin.pred
-  mean(pred[bin.pred])
-})
-
-observations <- ldply(levels(bin.obs), function(x) {
-  idx <- x == bin.obs
-  mean(obs[bin.obs])
-})
 
 
-is.nan.idx <- !is.nan(k$V2)
-k <- k[is.nan.idx,]  
-plot(k$V2, k$V1, xlim=c(0,1), ylim=c(0,1), xlab="Mean Prediction", ylab="Observed Fraction", col="red", type="o", main="Reliability Plot")
-lines(c(0,1),c(0,1), col="grey")
-subplot(hist(pred, xlab="", ylab="", main="", xlim=c(0,1), col="blue"), grconvertX(c(.8, 1), "npc"), grconvertY(c(0.08, .25), "npc"))
-```

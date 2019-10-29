@@ -9,13 +9,13 @@ Reliability of the forecasts
 How can we trust the reliability of large ensembles? The idea of the large ensemble is that we can see 'unseen' extreme events, how can we validate extremes that have not been observed?
 In event attribution, the validity of simulated extremes in large ensembles is typically based on the mean state and the ability to simulate the relevant physical processes ( [Angelil et al., 2016;](https://www.sciencedirect.com/science/article/pii/S2212094716300202#s0040) [Vautard et al., 2019](https://link.springer.com/article/10.1007%2Fs00382-018-4183-6)). In addition to these requirements, the forecasts should be reliable. A model is reliable when the forecast probability of occurrence matches the frequency of occurrences in the observations. For example, when the model predicts a probability of 30% for an extreme event to occur, in 30% of these cases this should occur in reality. [Antje et al., 2016](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2976) suggested that we can use reliability scores that have been developed for numerical weather predictions to test the reliability of extremes in large ensembles. Recently, [Bellprat et al., 2019](https://www.nature.com/articles/s41467-019-09729-2) has argued that assessing the reliability of extremes and correcting for models is a must for reliable extreme weather and climate event attribution.
 
-We create a large ensemble of extreme precipitation from the ECMWF SEAS5 system [Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf). From the SEAS5 hindcasts, we extract 3-day seasonal maximum precipitation for each ensemble and each lead time for each year (4 lead times, 25 ensembles and 35 years: 1981-2016). The idea is that precipitation forecasts are not predictable after two weeks, and therefore the forecasts from different ensemble members and lead times can be seen as plausible realizations of the past. The aim of this large ensemble is to be able to detect and attribute changes in extreme events over the last 35 years. To justify the pooling of ensemble members and lead times, we have assessed the ensemble member independence and the model stability. In this notebook, I would like to further discuss the reliability of extremes in the large ensemble and it's trend over last 35 years. From the references in the previous paragraph, I think that we can define three requirements that are applicable to this method: 1) the changes of the mean state of the model must match the observations within uncertainty bounds 2) the physical processes leading to extreme precipitation must be realistic simulated in SEAS5 and 3) the frequency of extreme precipitation in the model must match the observations.
+We create a large ensemble of extreme precipitation from the ECMWF SEAS5 system [Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf). From the SEAS5 hindcasts, we extract 3-day seasonal maximum precipitation for each ensemble and each lead time for each year (4 lead times, 25 ensembles and 35 years: 1981-2016). The idea is that precipitation forecasts are not predictable after two weeks, and therefore the forecasts from different ensemble members and lead times can be seen as plausible realizations of the past. The aim of this large ensemble is to be able to detect and attribute changes in extreme events over the last 35 years. To justify the pooling of ensemble members and lead times, we have assessed the ensemble member independence and the model stability. In this notebook, I would like to further discuss the reliability of extremes in the large ensemble and it's trend over last 35 years. From the references in the previous paragraph, I think that we can define three requirements that are applicable to this method: 1) the changes of the mean state of the model must match the observations within uncertainty bounds 2) the physical processes leading to extreme precipitation must be realistically simulated in SEAS5 and 3) the frequency of extreme precipitation in the model must match the observations.
 
 In this study, we use Norway and Svalbard as a case study to explore the validity of using SEAS5 to analyze trends in extreme precipitation ('UNSEEN' trends). These regions have recently faced severe events, raising the question whether these kind of events have occurred by chance or a the new norm. From observations, it is impossible to analyze the changes in these severe events: How have the 100-year precipitation events changed over last 35 years? With the SEAS5 large ensemble we can try to answer this question. But how realistic are the SEAS5 trends?
 
-### 1) SEAS5 changes in mean states and teleconnections
+### 1) SEAS5 changes in mean temperature and teleconnections
 
-[Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf) provide a thorough evaluation of the ECMWF SEAS5 system. The system follows carbon dioxide levels, and therefore is able to follow global temperature variability. There is a moderate skill in the North Atlantic Oscilation within SEAS5, and the observations fall mostly within the uncertainty ranges of the model. The model is known to have biases in the Arctic sea-ice extent in autumn and in the North Atlantic sea-surface temperature, which both might influence the reliability of the trend of extreme precipitation in SEAS5. The mean precipitation and temperature does follow observed variability for Norway and Svalbard (plots from Laura Ferranti, ECMWF). The trend in mean precipitation can be very different to the trend in extreme precipitation because of different mechanisms driving the trends.
+[Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf) provide a thorough evaluation of the ECMWF SEAS5 system. Relevant to Scandinavian extreme precipitation, there is a moderate skill in the North Atlantic Oscilation within SEAS5, and the model is known to have biases in the Arctic sea-ice extent and in the North Atlantic sea-surface temperature. The model follows carbon dioxide levels, and therefore is able to follow global temperature variability and warming. Following Johnson, we compare the mean temperature of SEAS5 to ERA-Interim and show that the model does follow the temperature trend, but has a cold bias over Norway (Attached plots).
 
 ### 2) Physical processes
 
@@ -30,6 +30,8 @@ Import data and packages
 ``` r
 dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
 plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='/home/timok/ensex'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
 source('Load_data.R')
 ```
 
@@ -57,48 +59,15 @@ p1
 # ggsave(p1, filename = paste0(plotdir,"/ggplot.png"), dpi = 100, type = "cairo")
 ```
 
-So what is the forecast probability of this event occurring? It is the amount of forecast above the threshold/total amount of forecast
+So what is the forecast probability of this event occurring?
+It is the amount of forecast above the threshold/total amount of forecast We plot the forecast probability of the 1-in-5 year events.
 
 ``` r
-by_ld_yr <- df %>% group_by(Leadtime, Year)
-count_by_ld_yr <- by_ld_yr %>% tally(V1>quantile(df$V1,0.8))
-count_by_ld_yr
-```
+#calculate the forecast prob
+Quantile=0.8
+probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25) 
 
-    ## # A tibble: 140 x 3
-    ## # Groups:   Leadtime [4]
-    ##    Leadtime Year      n
-    ##    <fct>    <fct> <int>
-    ##  1 2        1981      5
-    ##  2 2        1982      5
-    ##  3 2        1983      6
-    ##  4 2        1984      7
-    ##  5 2        1985      6
-    ##  6 2        1986      4
-    ##  7 2        1987      7
-    ##  8 2        1988      6
-    ##  9 2        1989      5
-    ## 10 2        1990      5
-    ## # … with 130 more rows
-
-``` r
-p= ggplot(count_by_ld_yr, aes(x=Year, y=n, color=Leadtime, shape=Leadtime)) +
-  theme_classic() 
-
-p1= p +   geom_point() +
-  scale_color_brewer(palette="Dark2") + 
-  scale_x_discrete(breaks=seq(1981,2016,5)) +
-  labs(x = NULL, y = 'Counts of Precipitation > 5yr')
-
-p1
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-4-1.png)
-
-``` r
-probs_by_ld_yr <- count_by_ld_yr %>% 
-  mutate(probs = n / 25)
-
+#and plot
 p= ggplot(probs_by_ld_yr, aes(x=Year, y=probs, color=Leadtime, shape=Leadtime,group=Leadtime)) +
   theme_classic() 
 
@@ -112,81 +81,100 @@ p1= p +
 p1
 ```
 
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 How to compare the forecasted probability to observed events?
+We show the years where the observed &gt; 5 year event
 
 ``` r
 obs=Extremes_obs[as.character(1981:2015)]
-count_obs=as.integer(obs>quantile(obs,0.8))
-plot(1981:2015,count_obs)
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-6-1.png)
-
-Compare the probability with an event occurring to the observed occurrences.
-
-``` r
-pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
-obs=count_obs
-
-bins=10
-bin.pred <- cut(pred, bins) ##Divide the predicted probabilities in bins
-
-##Calculate the observed frequency for each bin of predicted probabilities. Dont know if this works properly. Source: http://danielnee.com/tag/reliability-diagram/
-
-k <- ldply(levels(bin.pred), function(x) {  
-  idx <- x == bin.pred
-  c(sum(count_obs[idx]) / length(count_obs[idx]), mean(pred[idx]))
-})
-
-is.nan.idx <- !is.nan(k$V2)
-k <- k[is.nan.idx,]  
-plot(k$V2, k$V1, xlim=c(0,1), ylim=c(0,1), xlab="Mean Prediction", ylab="Observed Fraction", col="red", type="o", main="Reliability Plot")
-lines(c(0,1),c(0,1), col="grey")
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-7-1.png)
-
-``` r
-plot(hist(pred, xlab="", ylab="", main="", xlim=c(0,1), col="blue"), grconvertX(c(.8, 1), "npc"), grconvertY(c(0.08, .25), "npc"))
-```
-
-    ## Warning in if (freq) x$counts else x$density: the condition has length > 1
-    ## and only the first element will be used
-
-    ## Warning in if (!freq) "Density" else "Frequency": the condition has length
-    ## > 1 and only the first element will be used
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-7-2.png)![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-7-3.png)
-
-Hmm, looks odd. Let's compare it to the verification package
-
-``` r
-require(verification)
-A<- verify(obs, pred, frcst.type = "prob", obs.type = "binary")
-```
-
-    ## If baseline is not included, baseline values  will be calculated from the  sample obs.
-
-``` r
-reliability.plot(A, titl = "Alternative plot")
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-8-1.png)
-
-I guess that the 7 observations of a 5-year event do not allow for a robust analysis..
-
-``` r
-Quantile=0.5
-probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25)
-pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
-
 count_obs=as.integer(obs>quantile(obs,Quantile))
 plot(1981:2015,count_obs)
 ```
 
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-5-1.png)
+
+Compare the probability with an event occurring to the observed occurrences. We show the forecasts of lead time 2.
+
+``` r
+#Select the predictor
+pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
+
+#We use the Verification package for the reliability plot, please give any suggestions on other methods!
+require(verification)
+```
+
+    ## Loading required package: verification
+
+    ## Loading required package: methods
+
+    ## Loading required package: fields
+
+    ## Loading required package: spam
+
+    ## Loading required package: dotCall64
+
+    ## Loading required package: grid
+
+    ## Spam version 2.1-1 (2017-07-02) is loaded.
+    ## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+    ## and overview of this package.
+    ## Help for individual functions is also obtained by adding the
+    ## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
+
+    ## 
+    ## Attaching package: 'spam'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     backsolve, forwardsolve
+
+    ## Loading required package: maps
+
+    ## 
+    ## Attaching package: 'maps'
+
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     map
+
+    ## The following object is masked from 'package:plyr':
+    ## 
+    ##     ozone
+
+    ## Loading required package: boot
+
+    ## Loading required package: CircStats
+
+    ## Loading required package: MASS
+
+    ## 
+    ## Attaching package: 'MASS'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     select
+
+    ## Loading required package: dtw
+
+    ## Loading required package: proxy
+
+    ## 
+    ## Attaching package: 'proxy'
+
+    ## The following object is masked from 'package:spam':
+    ## 
+    ##     as.matrix
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     as.dist, dist
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     as.matrix
+
+    ## Loaded dtw v1.21-3. See ?dtw for help, citation("dtw") for use in publication.
 
 ``` r
 A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
@@ -195,51 +183,27 @@ A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
     ## If baseline is not included, baseline values  will be calculated from the  sample obs.
 
 ``` r
-reliability.plot(A, titl = "Alternative plot")
+reliability.plot(A, titl = "Lead time 2")
 ```
 
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-2.png)
+![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-6-1.png)
+
+I guess that the 7 observations of a 5-year event do not allow for a robust analysis.. Let's redo this for the 1-in-2 year event.
 
 ``` r
-obs=predictand_anomaly
-pred=apply(Extremes_WC,MARGIN = c(1,2) , FUN=calc_anomaly)
+Quantile=0.5
+probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25)
+pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
 
-rank.histogram <- function(pred,obs=NULL) {
-  
-  N <- dim(pred)[1]
-  K <- dim(pred)[2]
-  
-  ranks <- apply(cbind(obs, pred), 1, rank, ties.method="random")[1, ]
-  rank.hist <- hist(ranks, breaks=seq(0.5, K+1.5))[["counts"]]
-}
+count_obs=as.integer(obs>quantile(obs,Quantile))
 
-# apply(pred, MARGIN = 3, rank.histogram) #What am I doing wrong?
-
-rank.histogram(pred[,,1],obs)
+A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
 ```
 
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-3.png)
+    ## If baseline is not included, baseline values  will be calculated from the  sample obs.
 
 ``` r
-rank.histogram(pred[,,2],obs)
+reliability.plot(A, titl = "2yr")
 ```
 
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-4.png)
-
-``` r
-rank.histogram(pred[,,3],obs)
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-5.png)
-
-``` r
-rank.histogram(pred[,,4],obs)
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-6.png)
-
-``` r
-rank.histogram(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),obs)
-```
-
-![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-9-7.png)
+![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-7-1.png)

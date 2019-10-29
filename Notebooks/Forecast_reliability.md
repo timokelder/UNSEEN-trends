@@ -1,29 +1,26 @@
-Predictive skill
+SEAS5 reliability of Scandinavian extreme precipitation trends
 ================
 Timo Kelder
 October 19, 2019
 
-Reliability of the forecasts
-----------------------------
-
-How can we trust the reliability of large ensembles? The idea of the large ensemble is that we can see 'unseen' extreme events, how can we validate extremes that have not been observed?
-In event attribution, the validity of simulated extremes in large ensembles is typically based on the mean state and the ability to simulate the relevant physical processes ( [Angelil et al., 2016;](https://www.sciencedirect.com/science/article/pii/S2212094716300202#s0040) [Vautard et al., 2019](https://link.springer.com/article/10.1007%2Fs00382-018-4183-6)). In addition to these requirements, the forecasts should be reliable. A model is reliable when the forecast probability of occurrence matches the frequency of occurrences in the observations. For example, when the model predicts a probability of 30% for an extreme event to occur, in 30% of these cases this should occur in reality. [Antje et al., 2016](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2976) suggested that we can use reliability scores that have been developed for numerical weather predictions to test the reliability of extremes in large ensembles. Recently, [Bellprat et al., 2019](https://www.nature.com/articles/s41467-019-09729-2) has argued that assessing the reliability of extremes and correcting for models is a must for reliable extreme weather and climate event attribution.
-
-We create a large ensemble of extreme precipitation from the ECMWF SEAS5 system [Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf). From the SEAS5 hindcasts, we extract 3-day seasonal maximum precipitation for each ensemble and each lead time for each year (4 lead times, 25 ensembles and 35 years: 1981-2016). The idea is that precipitation forecasts are not predictable after two weeks, and therefore the forecasts from different ensemble members and lead times can be seen as plausible realizations of the past. The aim of this large ensemble is to be able to detect and attribute changes in extreme events over the last 35 years. To justify the pooling of ensemble members and lead times, we have assessed the ensemble member independence and the model stability. In this notebook, I would like to further discuss the reliability of extremes in the large ensemble and it's trend over last 35 years. From the references in the previous paragraph, I think that we can define three requirements that are applicable to this method: 1) the changes of the mean state of the model must match the observations within uncertainty bounds 2) the physical processes leading to extreme precipitation must be realistically simulated in SEAS5 and 3) the frequency of extreme precipitation in the model must match the observations.
+Short intro
+-----------
 
 In this study, we use Norway and Svalbard as a case study to explore the validity of using SEAS5 to analyze trends in extreme precipitation ('UNSEEN' trends). These regions have recently faced severe events, raising the question whether these kind of events have occurred by chance or a the new norm. From observations, it is impossible to analyze the changes in these severe events: How have the 100-year precipitation events changed over last 35 years? With the SEAS5 large ensemble we can try to answer this question. But how realistic are the SEAS5 trends?
 
-### 1) SEAS5 changes in mean temperature and teleconnections
+We create a large ensemble of extreme precipitation from the ECMWF SEAS5 system [Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf). From the SEAS5 hindcasts, we extract 3-day seasonal maximum precipitation for each ensemble and each lead time for each year (4 lead times, 25 ensembles and 35 years: 1981-2016). The idea is that precipitation forecasts are not predictable after two weeks, and therefore the forecasts from different ensemble members and lead times can be seen as plausible realizations of the past. The aim of this large ensemble is to be able to detect and attribute changes in extreme events over the last 35 years. To justify the pooling of ensemble members and lead times, we have assessed the ensemble member independence and the model stability. In this notebook, I would like to further discuss the reliability of extremes in the large ensemble and it's trend over last 35 years.
 
-[Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf) provide a thorough evaluation of the ECMWF SEAS5 system. Relevant to Scandinavian extreme precipitation, there is a moderate skill in the North Atlantic Oscilation within SEAS5, and the model is known to have biases in the Arctic sea-ice extent and in the North Atlantic sea-surface temperature. The model follows carbon dioxide levels, and therefore is able to follow global temperature variability and warming. Following Johnson, we compare the mean temperature of SEAS5 to ERA-Interim and show that the model does follow the temperature trend, but has a cold bias over Norway (Attached plots).
+Reliability
+-----------
 
-### 2) Physical processes
+How can we trust the reliability of large ensembles? The idea of the large ensemble is that we can see 'unseen' extreme events, how can we validate extremes that have not been observed?
+In event attribution, the validity of simulated extremes in large ensembles is typically based on the mean state and the ability to simulate the relevant physical processes ( [Angelil et al., 2016;](https://www.sciencedirect.com/science/article/pii/S2212094716300202#s0040) [Vautard et al., 2019](https://link.springer.com/article/10.1007%2Fs00382-018-4183-6)). [Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf) provide a thorough evaluation of the ECMWF SEAS5 system. Relevant to Scandinavian extreme precipitation, there is a moderate skill in the North Atlantic Oscilation within SEAS5, and the model is known to have biases in the Arctic sea-ice extent and in the North Atlantic sea-surface temperature. SEAS5 is initialized with ocean and atmosphere reanalysis that might introduce inhomogeneities because of the increasing amount of assimilated data over time. SEAS5 greenhouse gas radiative forcing is the same as in ERA5, and captures long-term trends in emissions (Johnson). Following Johnson, we compare the regional temperature variability of SEAS5 to ERA-Interim for the two study domains. We show that the model does follow the observed temperature trend over Svalbard, that there is no trend and a cold bias over Norway (ECMWF plots from Laura).
 
-The extreme precipitation events over this region are dominantely driven by atmospheric rivers (Azad,2017). Previous studies have demonstrated the capability of the ECMWF atmospheric model to simulate atmospheric rivers for Northern Europe (Lavers). This gives confidence in the SEAS5 system to be able to simulate the right physical processes of the large-scale build-up of extreme precipitation over Norway and Svalbard. However, these regions are mountaineous and characterised by large topographic variability. The small-scale processes in these mountaineous areas cannot be resolved in a global model with 36 km resolution. Therefore, the averaged extreme precipitation over a larger domain is more reliable than the spatial variability of the extreme precipitation. We evaluate the extreme precipitation averaged over the West Coast of Norway to a gridded precipitation record (SeNorge). We upscale this gridded product to the same resolution as SEAS5 and calculate the average of the same West Coast domain and find that the forecasts do have a lower bias in the simulation of three-day extreme precipitation events. After mean bias correction, we find that the observed values are randomly distributed amongst the ranked members of the ensemble in each year, indicating that the forecasted values can be seen as plausible realizations of reality (right?).
+The Autumn extreme precipitation events over the study domain are predominantly driven by atmospheric rivers (Azad,2017). Previous studies have demonstrated the capability of the ECMWF atmospheric model to simulate atmospheric rivers for Northern Europe (Lavers). This gives confidence in the SEAS5 system to be able to simulate the right physical processes of the large-scale build-up of extreme precipitation over Norway and Svalbard. However, these regions are mountaineous and characterised by large topographic variability. The small-scale processes in these mountaineous areas cannot be resolved in a global model with 36 km resolution. Therefore, the averaged extreme precipitation over a larger domain is more reliable than the spatial variability of the extreme precipitation. We evaluate the extreme precipitation averaged over the West Coast of Norway to a gridded precipitation record (SeNorge). We upscale this gridded product to the same resolution as SEAS5 and calculate the average of the same West Coast domain. We find a lower bias in the simulation of three-day extreme precipitation events ( [Predictive skill](Predictive_skill.md). After mean bias correction, we find that the observed values are randomly distributed amongst the ranked members of the ensemble in each year, indicating that the forecasted values can be seen as plausible realizations of reality (right?).
 
-### 3) Frequency of simulated extremes
+In addition to the validation of the mean states and the physical processes, reliability scores that have been developed for numerical weather predictions can be used to test the reliability of extremes in large ensembles ( [Antje et al., 2016;](https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2976) [Bellprat et al., 2019](https://www.nature.com/articles/s41467-019-09729-2)). A model is reliable when the forecast probability of occurrence matches the frequency of occurrences in the observations. For example, when the model predicts a probability of 30% for an extreme event to occur, in 30% of these cases this should occur in reality.
 
-The reliability plot, as suggested by Antje and Bellprat, indicates whether the forecasted probability of occurrence matches the observed frequency of occurrence and therefore indicates whether a system is reliable. In this section, I will try to apply this to our SEAS5 extreme precipitation ensemble. Extreme precipitation is defined as the maximum 3-day precipitation event within the SON season. We have 100 ensemble members (4 lead times x 25 members) for each year between 1981-2016.
+The reliability plot, as suggested by Antje and Bellprat, indicates whether the forecasted probability of occurrence matches the observed frequency of occurrence. In this section, I will try to apply this to our SEAS5 extreme precipitation ensemble. Extreme precipitation is defined as the maximum 3-day precipitation event within the SON season. We have 100 ensemble members (4 lead times x 25 members) for each year between 1981-2016.
 
 Import data and packages
 
@@ -94,7 +91,7 @@ plot(1981:2015,count_obs)
 
 ![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-Compare the probability with an event occurring to the observed occurrences. We show the forecasts of lead time 2.
+Compare the forecast probability to the observed frequency of occurrence. We show the forecasts of lead time 2.
 
 ``` r
 #Select the predictor
@@ -102,81 +99,6 @@ pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Jus
 
 #We use the Verification package for the reliability plot, please give any suggestions on other methods!
 require(verification)
-```
-
-    ## Loading required package: verification
-
-    ## Loading required package: methods
-
-    ## Loading required package: fields
-
-    ## Loading required package: spam
-
-    ## Loading required package: dotCall64
-
-    ## Loading required package: grid
-
-    ## Spam version 2.1-1 (2017-07-02) is loaded.
-    ## Type 'help( Spam)' or 'demo( spam)' for a short introduction 
-    ## and overview of this package.
-    ## Help for individual functions is also obtained by adding the
-    ## suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
-
-    ## 
-    ## Attaching package: 'spam'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     backsolve, forwardsolve
-
-    ## Loading required package: maps
-
-    ## 
-    ## Attaching package: 'maps'
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     map
-
-    ## The following object is masked from 'package:plyr':
-    ## 
-    ##     ozone
-
-    ## Loading required package: boot
-
-    ## Loading required package: CircStats
-
-    ## Loading required package: MASS
-
-    ## 
-    ## Attaching package: 'MASS'
-
-    ## The following object is masked from 'package:dplyr':
-    ## 
-    ##     select
-
-    ## Loading required package: dtw
-
-    ## Loading required package: proxy
-
-    ## 
-    ## Attaching package: 'proxy'
-
-    ## The following object is masked from 'package:spam':
-    ## 
-    ##     as.matrix
-
-    ## The following objects are masked from 'package:stats':
-    ## 
-    ##     as.dist, dist
-
-    ## The following object is masked from 'package:base':
-    ## 
-    ##     as.matrix
-
-    ## Loaded dtw v1.21-3. See ?dtw for help, citation("dtw") for use in publication.
-
-``` r
 A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
 ```
 
@@ -207,3 +129,5 @@ reliability.plot(A, titl = "2yr")
 ```
 
 ![](Forecast_reliability_files/figure-markdown_github/unnamed-chunk-7-1.png)
+
+This also does not seem convincing to me. The probabilities over the years are quite similar, because precipitation is not predictable after a month. What does this mean for the reliability? Do we require reliability of the model to be able to trust the trends in SEAS5? Or do we trust the trends in SEAS5 because the observations lie within the large ensemble, as previously shown with the rank histograms?

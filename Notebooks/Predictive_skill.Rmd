@@ -9,15 +9,19 @@ output: github_document
 Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"
 ```
 
+In this notebook, we will first show the forecasts of the Norwegian West Coast compared to observed values and then we will assess the skill of the forecasts. 
+
 ## Import data and packages
 
 ```{r}
 dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
 plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='/home/timok/ensex'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
 source('Load_data.R')
 ```
 
-##Visualize the data
+##SEAS5 compared to SeNorge
 
 Plot the observations and the forecasts for: 
 
@@ -26,21 +30,26 @@ Plot the observations and the forecasts for:
 - The standardized anomaly for the forecasts and the observations 
 
 
-```{r}
-plot(1981:2015,predictand,type='l',ylim=c(0,175))
+```{r fig1, fig.height = 9, fig.width = 5, fig.align = "center"}
+par(mfrow=c(3,1))
+plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON three-day precipitation maxima',xlab = '',xaxt='n')
 for (mbr in 1:25){
   for (ld in 1:4){
     lines(1981:2015,Extremes_WC[mbr,ld,],col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
 
-plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80))
+
+plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80),ylab = 'Anomalies',xlab = '',xaxt='n')
 for (mbr in 1:25){
   for (ld in 1:4){
     lines(1981:2015,Extremes_WC[mbr,ld,]-mean(Extremes_WC),col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
 
-plot(1981:2015,predictand_anomaly,type='l',ylim = c(-2.5,4))
+plot(1981:2015,predictand_anomaly,type='l',ylim = c(-2.5,4),ylab='Standardized anomalies',xlab = '')
 for (mbr in 1:25){
   for (ld in 1:4){
     lines(1981:2015,calc_anomaly(Extremes_WC[mbr,ld,]),col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
 
 ```
 
@@ -76,6 +85,7 @@ rank.histogram(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly
 
 ```
 
+## Predictive skill
 Then, for the predictive skill, the mean of the forecasts for each leadtime is used for the raw and standardized data.
 
 ```{r}
@@ -115,8 +125,7 @@ p2
 ```
 
 
-##Correlations
-Calculate the correlation test between the anomalies of the ensemble mean of each lead time and the observations
+We calculate the correlation test between the anomalies of the ensemble mean of each lead time and the observations
 
 ```{r}
 #Use spearman to avoid normality assumptions

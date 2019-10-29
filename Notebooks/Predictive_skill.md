@@ -47,14 +47,14 @@ Plot the observations and the forecasts for:
 
 ``` r
 par(mfrow=c(3,1))
-plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON three-day precipitation maxima',xlab = '',xaxt='n')
+plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON three-day precipitation maxima',xlab = '')
 for (mbr in 1:25){
   for (ld in 1:4){
     lines(1981:2015,Extremes_WC[mbr,ld,],col=alpha('blue',0.1))}}
 axis(side = 1,1981:2015,labels = F)
 
 
-plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80),ylab = 'Anomalies',xlab = '',xaxt='n')
+plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80),ylab = 'Anomalies',xlab = '')
 for (mbr in 1:25){
   for (ld in 1:4){
     lines(1981:2015,Extremes_WC[mbr,ld,]-mean(Extremes_WC),col=alpha('blue',0.1))}}

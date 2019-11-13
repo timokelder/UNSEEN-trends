@@ -6,7 +6,7 @@ output: github_document
 ---
   
 ```{r eval=FALSE, include=FALSE}
-Rscript -e "rmarkdown::render('Forecast_reliability.Rmd')"
+Rscript -e "rmarkdown::render('Trend_analysis.Rmd')"
 ```
 
 ###Import data and packages

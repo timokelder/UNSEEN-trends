@@ -11,8 +11,8 @@ Import data and packages
 ``` r
 dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
 plotdir=paste0(dir,'/statistics/multiday/plots')
-# dir='/home/timok/ensex'
-# plotdir='/home/timok/Documents/ensex/R/graphs'
+#dir='/home/timok/Documents/ensex'
+#plotdir='/home/timok/Documents/ensex/R/graphs'
 source('Load_data.R')
 ```
 

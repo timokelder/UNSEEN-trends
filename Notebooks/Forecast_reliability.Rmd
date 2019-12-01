@@ -29,10 +29,11 @@ The reliability plot, as suggested by Antje and Bellprat, indicates whether the 
 Import data and packages
 
 ```{r message=FALSE}
-dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
 source('Load_data.R')
 ```
 
@@ -66,6 +67,8 @@ We plot the forecast probability of the 1-in-5 year events.
 Quantile=0.8
 probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25) 
 
+probs_yr <- df %>% group_by(Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 100) 
+
 #and plot
 p= ggplot(probs_by_ld_yr, aes(x=Year, y=probs, color=Leadtime, shape=Leadtime,group=Leadtime)) +
   theme_classic() 
@@ -93,13 +96,45 @@ Compare the forecast probability to the observed frequency of occurrence. We sho
 
 ```{r message=FALSE}
 #Select the predictor
-pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
-
+pred2= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
+pred3= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='3',4])) #
+pred4= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='4',4])) #
+pred5= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='5',4])) #
+pred_all=probs_yr$probs
 #We use the Verification package for the reliability plot, please give any suggestions on other methods!
 require(verification)
-A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
+A2<- verify(count_obs, pred2, p=0.8,frcst.type = "prob", obs.type = "binary")
+A3<- verify(count_obs, pred3, p=0.8,frcst.type = "prob", obs.type = "binary")
+A4<- verify(count_obs, pred4, p=0.8,frcst.type = "prob", obs.type = "binary")
+A5<- verify(count_obs, pred5, p=0.8,frcst.type = "prob", obs.type = "binary")
+A_all<- verify(count_obs, pred_all, p=0.8,frcst.type = "prob", obs.type = "binary")
 
-reliability.plot(A, titl = "Lead time 2")
+# reliability.plot(x = A$y.i,obar.i = A$obar.i,prob.y = A$prob.y, titl = "Lead time 2")
+
+df_A2=data.frame('y.i'=A2$y.i,'obar.i'=A2$obar.i,'prob.y'=A2$prob.y,'Leadtime'=rep(2,10))
+df_A3=data.frame('y.i'=A3$y.i,'obar.i'=A3$obar.i,'prob.y'=A3$prob.y,'Leadtime'=rep(3,10))
+df_A4=data.frame('y.i'=A4$y.i,'obar.i'=A4$obar.i,'prob.y'=A4$prob.y,'Leadtime'=rep(4,10))
+df_A5=data.frame('y.i'=A5$y.i,'obar.i'=A5$obar.i,'prob.y'=A5$prob.y,'Leadtime'=rep(5,10))
+df_A_all=data.frame('y.i'=A_all$y.i,'obar.i'=A_all$obar.i,'prob.y'=A_all$prob.y)
+
+df_A=rbind(df_A2,df_A3,df_A4,df_A5)
+# lm(formula = obar.i~y.i,data = df_A,weights = prob.y)
+
+ggplot()+
+  geom_point(data=df_A,aes(x = y.i,y=obar.i,size=prob.y,color=factor(Leadtime)))+
+  geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,color=factor(Leadtime)))+
+  geom_point(data=df_A_all,aes(x = y.i,y=obar.i,size=prob.y))+
+  geom_line(data=df_A,aes(x=y.i,y=y.i))+
+  xlim(0,1)+
+  ylim(0,1)+
+  theme_classic()+
+  theme(legend.position = c(.9, .2))
+    # legend.justification = c("right", "bottom"),
+    # legend.box.just = "right",
+    # legend.title = element_blank())+
+
+
+
 
 ```
 
@@ -118,5 +153,45 @@ reliability.plot(A, titl = "2yr")
 ```
 
 This also does not seem convincing to me. The probabilities over the years are quite similar, because precipitation is not predictable after a month. *Am I applying this correctly? What does this mean for the reliability? Do we require reliability of the model to be able to trust the trends in SEAS5? Or do we trust the trends in SEAS5 because the observations lie within the large ensemble, as previously shown with the rank histograms in [Predictive skill](Predictive_skill.md)? What is Antje's opinion -> we will meet November 22nd*
+
+
+```{r, eval=FALSE, include=FALSE}
+obar.i <- as.matrix(df_A$obar.i)
+m <- dim(obar.i)[2]
+x=df_A$y.i
+
+
+plot(df_A$y.i, obar.i[, 1], col = 2, lwd = 2, type = "n", 
+       xlim = c(0, 1), ylim = c(0, 1), xlab = expression(paste("Forecast probability, ", 
+                                                               y[i])), ylab = expression(paste("Observed relative frequency, ", 
+                                                                                               bar(o)[1])))
+  
+for (i in 1:m) {
+    points(x, obar.i[, i], type = "b", col = 1 + i, 
+           lty = i, lwd = 2)
+  }
+  abline(0, 1)
+  if (m == 1) {
+    leg.txt <- legend.names[1]
+    legend(0.8, 0.35, leg.txt, bty = "n", col = 2, 
+           lwd = 2, pch = 1, lty = 1)
+  }
+    
+
+
+getAnywhere(reliability.plot)
+verification:::reliability.plot
+
+getMethod("verification", "reliability.plot")
+methods(reliability.plot)
+reliability.plot.default
+methods(class='plot')
+plot(x = A$y.i,y = A$obar.i)
+
+
+edit(getAnywhere('reliability.plot'), file='source_rfcv.r')
+
+```
+
 
 

@@ -10,12 +10,15 @@ In this notebook, we are going to perform trend analysis based on extreme value 
 The data for the West coast and Svalbard are loaded.
 
 ``` r
-dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/Documents/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+plotdir='/home/timok/Documents/ensex/R/graphs'
 source('Load_data.R')
 library(extRemes)
+library("ggpubr")
 
 ##Clean up and compare to load_Data
 names(dimnames(Extremes_WC)) <- c('Member', 'Leadtime', 'Year')
@@ -139,7 +142,7 @@ colnames(rvs_obs_2015) = c('Obs_2015_l','Obs_2015','Obs_2015_h','Obs_2015_sd')
 rvs_WC=data.frame(cbind(rvs_wc_1981,rvs_wc_2015,rvs_obs_1981,rvs_obs_2015,rperiods))
 
 # cols=c("S5_1981"="#f04546","S5_2015"="#3591d1","Obs_1981"="#62c76b","Obs_2015"="#62c76b")
-ggplot(data = rvs_WC,aes(x=rperiods))+
+p_wc=ggplot(data = rvs_WC,aes(x=rperiods))+
   geom_line(aes(y = S5_1981),col='black')+
   geom_ribbon(aes(ymin=S5_1981_l,ymax=S5_1981_h),fill='black',alpha=0.5,show.legend = T)+
   geom_line(aes(y = S5_2015),col='red')+
@@ -153,11 +156,7 @@ ggplot(data = rvs_WC,aes(x=rperiods))+
   theme_classic()+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
-```
 
-![](Trend_analysis_files/figure-markdown_github/unnamed-chunk-4-1.png)
-
-``` r
 rvs_sv_1981=RV_ci(extremes = df_SV$V1,covariate = c(df_WC$Year),return_period = rperiods,covariate_values = 1) ##calc the return values
 colnames(rvs_sv_1981) = c('S5_1981_l','S5_1981','S5_1981_h','S5_1981_sd') #Rename the column
 
@@ -168,7 +167,7 @@ rvs_SV=data.frame(cbind(rvs_sv_1981,rvs_sv_2015,rperiods))
 
 
 cols=c("SEAS5 1981"="black","SEAS5 2015"="red")
-ggplot(data = rvs_SV,aes(x=rperiods))+
+p_sv=ggplot(data = rvs_SV,aes(x=rperiods))+
   geom_line(aes(y = S5_1981,colour="SEAS5 1981"),col=1)+
   geom_ribbon(aes(ymin=S5_1981_l,ymax=S5_1981_h,fill="SEAS5 1981"),alpha=0.5)+
   geom_line(aes(y = S5_2015,colour="SEAS5 2015"),col=2)+
@@ -179,17 +178,19 @@ ggplot(data = rvs_SV,aes(x=rperiods))+
   theme(legend.position = c(.95, .05),
   legend.justification = c("right", "bottom"),
   legend.box.just = "right",
-  legend.title = element_blank())+
+  legend.title = element_blank(),
+  axis.title.y=element_blank())+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
-```
-
-![](Trend_analysis_files/figure-markdown_github/unnamed-chunk-4-2.png)
-
-``` r
 # +
 # scale_colour_manual(name="Years",values=cols)#, guide = guide_legend(override.aes=aes(fill=NA)))
+
+ggarrange(p_wc, p_sv,
+          labels = c("A", "B"),
+          ncol = 2, nrow = 1)
 ```
+
+![](Trend_analysis_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 We plot the West coast region for the SEAS5 trend and the observed trend. We then perform a mean bias correction to SEAS5.
 
@@ -219,6 +220,20 @@ legend("topleft", legend=c("100 yr Values", "95% Intervals","Seasonal Extremes")
 
 ``` r
 ###Bias corrected series
+p_trend_wc=
+  ggplot()+
+  geom_point(aes(x = year_vector,y = extremes_wc),size=2,alpha=0.051)+
+   # scale_size_manual(values = seq(0.1,3,length.out = 3499)) +
+  geom_point(aes(x=1981:2015,y =obs),col='blue',shape=4,size=2,stroke=1.5)+
+  geom_line(aes(x=1981:2015,y = ci_wc_biascor[,2]),col='orange')+
+  geom_ribbon(aes(x=1981:2015,ymin = ci_wc_biascor[,1],ymax=ci_wc_biascor[,3]),fill='orange',alpha=0.2)+
+  geom_line(aes(x=1981:2015,y = ci_obs[,2]),col='blue')+
+  geom_ribbon(aes(x=1981:2015,ymin = ci_obs[,1],ymax=ci_obs[,3]),fill='blue',alpha=0.2)+
+  theme_classic()+
+  ylab('Three-day precipitation (mm)')+
+  theme(axis.title.x=element_blank())
+
+
 plot(year_vector,extremes_wc,xlab=' year',ylab='P (mm)',ylim = c(min(c(obs,extremes_wc)),max(c(obs,extremes_wc))),cex=0.2,col=alpha('black',0.4))
 points(1981:2015,obs,col='blue',pch=20)
 lines(1981:2015,ci_wc_biascor[,3],col='orange',type = 'l',lty=2,lwd=3)
@@ -240,11 +255,25 @@ And for Svalbard
 ##Svalbard 
 ci_sv=RV_ci(extremes = df_SV$V1,covariate = c(df_SV$Year),return_period = 100,covariate_values = c(1:35))
 
-plot(year_vector,df_SV$V1,xlab=' year',ylab='P (mm)',pch=20,col=alpha('black',0.2))#,ylim = c(0,max(ci_obs[,3])))
-#points(1981:2015,obs,col='blue',pch=20)
-lines(1981:2015,ci_sv[,3],col='orange',type = 'l',lty=2,lwd=3)
-lines(1981:2015,ci_sv[,1],col='orange',type = 'l',lty=2,lwd=3)
-lines(1981:2015,ci_sv[,2],col='orange',lwd=2)
+p_trend_sv=
+ggplot()+
+  geom_point(data = df_SV,aes(x = year_vector,y = V1,size=V1),size=2,alpha=0.051)+
+  geom_line(aes(x=1981:2015,y = ci_sv[,2]),col='orange')+
+  geom_ribbon(aes(x=1981:2015,ymin = ci_sv[,1],ymax=ci_sv[,3]),fill='orange',alpha=0.2)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank())
+
+# plot(year_vector,df_SV$V1,xlab=' year',ylab='P (mm)',pch=20,col=alpha('black',0.2))#,ylim = c(0,max(ci_obs[,3])))
+# #points(1981:2015,obs,col='blue',pch=20)
+# lines(1981:2015,ci_sv[,3],col='orange',type = 'l',lty=2,lwd=3)
+# lines(1981:2015,ci_sv[,1],col='orange',type = 'l',lty=2,lwd=3)
+# lines(1981:2015,ci_sv[,2],col='orange',lwd=2)
+
+ggarrange(p_trend_wc, p_trend_sv,
+          labels = c("A", "B"),
+          ncol = 2, nrow = 1)
 ```
 
 ![](Trend_analysis_files/figure-markdown_github/unnamed-chunk-6-1.png)

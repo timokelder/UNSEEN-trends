@@ -14,10 +14,12 @@ In this notebook, we will first show the forecasts of the Norwegian West Coast c
 ## Import data and packages
 
 ```{r}
-dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
+
 source('Load_data.R')
 ```
 
@@ -90,12 +92,14 @@ Then, for the predictive skill, the mean of the forecasts for each leadtime is u
 
 ```{r}
 plot(1981:2015,predictand,type='l')
+lines(1981:2015,predictor_all,col='orange')
 lines(1981:2015,predictor['2',],col='blue')
 lines(1981:2015,predictor['3',],col='blue')
 lines(1981:2015,predictor['4',],col='blue')
 lines(1981:2015,predictor['5',],col='blue')
 
 plot(1981:2015,predictand_anomaly,type='l')
+lines(1981:2015,predictor_anomaly_all,col='orange')
 lines(1981:2015,predictor_anomaly[,'2'],col='blue')
 lines(1981:2015,predictor_anomaly[,'3'],col='blue')
 lines(1981:2015,predictor_anomaly[,'4'],col='blue')
@@ -106,20 +110,19 @@ We compare the anomaly of the observations with forecasts for each of the lead t
 ```{r}
 
 df <- data.frame(predictand_anomaly,predictor_anomaly) %>%
-  select(predictand_anomaly, X2,X3,X4,X5) %>%
+  # select(predictand_anomaly, X2,X3,X4,X5) %>%
   gather(key = "variable", value = "value", -predictand_anomaly)
+df_all <- data.frame(predictand_anomaly,predictor_anomaly_all)
 
-p= ggplot(df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)) +
-  geom_point() + 
-  geom_smooth(method=lm)+
+ggplot() +
+  geom_point(data=df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)) +
+  geom_smooth(method=lm,data=df, aes(x=predictand_anomaly, y=value, color=variable,fill=variable))+
+  geom_point(data=df_all, aes(x=predictand_anomaly, y=predictor_anomaly_all), color='black') + 
+  geom_smooth(method=lm,data=df_all, aes(x=predictand_anomaly, y=predictor_anomaly_all), color='black')+
   xlim(-2.5, 2.5) +
   ylim(-2.5, 2.5) +
   theme_classic() 
 
-# p1 = p + scale_color_grey()
-p2 = p + scale_color_brewer(palette="Dark2")
-# p1
-p2
 
 
 ```
@@ -135,6 +138,9 @@ correlation_test <- function(predictor_anomaly) {
 correlation=cor.test(predictand_anomaly,predictor_anomaly,alternative = 'two.sided',method = cor_coeff) #alternative hypothesis is that the population correlation is greater than 0. -> we don't expect negative correlations? 
 return(c(correlation$estimate,correlation$p.value))}# 
 apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
+print('For the pooled leadtimes')
+correlation_test(predictor_anomaly = predictor_anomaly_all)
+
 ```
 
 The correlations are very small. Does it even make sense to continue and calculate the ratio of predictable components? I don't think so. The main question I have is: Do we trust the trends in the anomalies of the model to be representative of trends in reality (the anomalies of the observations), even if there is no skill? See the forecast reliability notebook. 
@@ -155,8 +161,27 @@ apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
 
 ```
 
+##The ration of predictable components (RPC).
+This can be calculated in two ways: 1) the variation of the mean compared to the variation of single members and 2) the RMSE compared to the variation.
+
+```{r}
+Var_signal=sd(predictor_all)^2 #The signal is the interannual variance of the model mean
+
+sd_ensemble=apply(Extremes_WC,MARGIN = c(1,2),FUN=sd) #predictor['2','1987']
+Var_noise=mean(sd_ensemble)^2 #The noise is the variance of the individual ensemble members about the ensemble mean
 
 
+PC_mod=Var_signal/(Var_signal+Var_noise)# Intrinsic model predictability of the signal
 
+correlation=cor.test(predictand,predictor_all,alternative = 'two.sided',method = 'pearson') #alternative hypothesis is that the population correlation is greater than 0. -> we don't expect negative correlations? 
+PC_reality=correlation$estimate #the predictability of the model 
+RPC1= PC_reality/sqrt(PC_mod)
+
+RMSE = sqrt(mean((predictor_all - predictand)^2))
+RMSE_biascor = sqrt(mean((predictor_all*(mean(predictand)/mean(predictor)) - predictand)^2))
+RPC2=RMSE/mean(sd_ensemble)
+
+
+```
 
 

@@ -33,7 +33,8 @@ Import data and packages
 # plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
-dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+# dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
 source('Load_data.R')
 ```
 
@@ -122,7 +123,7 @@ df_A=rbind(df_A2,df_A3,df_A4,df_A5)
 
 ggplot()+
   geom_point(data=df_A,aes(x = y.i,y=obar.i,size=prob.y,color=factor(Leadtime)))+
-  geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,color=factor(Leadtime)))+
+  geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,fill=factor(Leadtime),color=factor(Leadtime)))+
   geom_point(data=df_A_all,aes(x = y.i,y=obar.i,size=prob.y))+
   geom_line(data=df_A,aes(x=y.i,y=y.i))+
   xlim(0,1)+
@@ -142,10 +143,47 @@ I guess that the 7 observations of a 5-year event do not allow for a robust anal
 Let's redo this for the 1-in-2 year event.
 ```{r}
 Quantile=0.5
-probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25)
-pred= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
-
+probs_yr <- df %>% group_by(Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 100) 
 count_obs=as.integer(obs>quantile(obs,Quantile))
+probs_by_ld_yr <- df %>% group_by(Leadtime, Year) %>% tally(V1>quantile(df$V1,Quantile)) %>% mutate(probs = n / 25)
+#Select the predictor
+pred2= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='2',4])) #Just select lead time 2, ugly coding :(
+pred3= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='3',4])) #
+pred4= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='4',4])) #
+pred5= as.vector(unlist(probs_by_ld_yr[probs_by_ld_yr[,'Leadtime']=='5',4])) #
+pred_all=probs_yr$probs
+#We use the Verification package for the reliability plot, please give any suggestions on other methods!
+require(verification)
+A2<- verify(count_obs, pred2, p=0.8,frcst.type = "prob", obs.type = "binary")
+A3<- verify(count_obs, pred3, p=0.8,frcst.type = "prob", obs.type = "binary")
+A4<- verify(count_obs, pred4, p=0.8,frcst.type = "prob", obs.type = "binary")
+A5<- verify(count_obs, pred5, p=0.8,frcst.type = "prob", obs.type = "binary")
+A_all<- verify(count_obs, pred_all, p=0.8,frcst.type = "prob", obs.type = "binary")
+
+# reliability.plot(x = A$y.i,obar.i = A$obar.i,prob.y = A$prob.y, titl = "Lead time 2")
+
+df_A2=data.frame('y.i'=A2$y.i,'obar.i'=A2$obar.i,'prob.y'=A2$prob.y,'Leadtime'=rep(2,10))
+df_A3=data.frame('y.i'=A3$y.i,'obar.i'=A3$obar.i,'prob.y'=A3$prob.y,'Leadtime'=rep(3,10))
+df_A4=data.frame('y.i'=A4$y.i,'obar.i'=A4$obar.i,'prob.y'=A4$prob.y,'Leadtime'=rep(4,10))
+df_A5=data.frame('y.i'=A5$y.i,'obar.i'=A5$obar.i,'prob.y'=A5$prob.y,'Leadtime'=rep(5,10))
+df_A_all=data.frame('y.i'=A_all$y.i,'obar.i'=A_all$obar.i,'prob.y'=A_all$prob.y)
+
+df_A=rbind(df_A2,df_A3,df_A4,df_A5)
+# lm(formula = obar.i~y.i,data = df_A,weights = prob.y)
+
+ggplot()+
+  geom_point(data=df_A,aes(x = y.i,y=obar.i,size=prob.y,color=factor(Leadtime)))+
+  geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,fill=factor(Leadtime),color=factor(Leadtime)))+
+  geom_point(data=df_A_all,aes(x = y.i,y=obar.i,size=prob.y))+
+  geom_line(data=df_A,aes(x=y.i,y=y.i))+
+  xlim(0,1)+
+  ylim(0,1)+
+  theme_classic()+
+  theme(legend.position = c(.9, .2))
+    # legend.justification = c("right", "bottom"),
+    # legend.box.just = "right",
+    # legend.title = element_blank())+
+
 
 A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
 

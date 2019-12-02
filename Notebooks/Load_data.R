@@ -21,11 +21,13 @@ dimnames(Extremes_obs) = list(as.character(1957:2018))
 
 predictand=as.vector(Extremes_obs[as.character(1981:2015)]) #First member, first leadtime that we use in this study
 predictor=apply(Extremes_WC,MARGIN = c(2,3),FUN=mean) #predictor['2','1987']
+predictor_all=apply(Extremes_WC,MARGIN = c(3),FUN=mean) #predictor['2','1987']
 
 #Standarized anomaly
 calc_anomaly <- function(variable) {
   (variable-mean(variable))/sd(variable)
 }
 predictor_anomaly=apply(predictor,MARGIN = 1 , FUN=calc_anomaly)
+predictor_anomaly_all <- calc_anomaly(predictor_all)
 predictand_anomaly=calc_anomaly(predictand)
 

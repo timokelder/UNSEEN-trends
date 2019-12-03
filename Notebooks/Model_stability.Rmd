@@ -20,8 +20,10 @@ In this notebook, we assess the stability of the model over forecast length. Doe
 # plotdir_Norlaptop='/home/timok/Documents/ensex/R/graphs'
 # dir_Perslaptop='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
 # plotdir_Perslaptop='/home/timok/Documents/ensex/R/graphs'
-dir='/home/timok/Documents/ensex/EnsEx/Data'
-plotdir='/home/timok/Documents/ensex/R/graphs'
+# dir='/home/timok/Documents/ensex/EnsEx/Data'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
+
 source('Load_data.R')
 library("ggpubr")
 ```
@@ -56,14 +58,18 @@ quantile(x,probs=c(0.025,0.975))  ##lower and upper interval
 In addition to the cumulative plot, this is a density plot. Without ci.. 
 ```{r}
 p1=ggplot(df_WC, aes(x = V1, colour = Leadtime)) +
-  labs(x = 'Precipitation')+
+  labs(x = 'Three-day precipitation (mm)',y = 'Density')+
   geom_density(alpha = .3)+
-  theme_classic()
+  theme_classic()+
+  theme(legend.position = "none")
 
 p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
-  labs(x = 'Precipitation')+
+  labs(x = 'Three-day precipitation (mm)')+
   geom_density(alpha = .3)+
-  theme_classic()
+  theme_classic()+
+  theme(legend.position = "none",
+      axis.title.y=element_blank())
+
 p1
 p2
 # ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
@@ -82,7 +88,7 @@ Rvs_WC=apply(bootstrapped_array_WC, MARGIN = 2,empirical_returnvalues) #apply th
 Rvs_SV=apply(bootstrapped_array_SV, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
 
 #calculate the lower and upper interval from the 10.000 values for each quantile. 
-ci_rvs_WC=data.frame(apply(Rvs_WC, MARGIN = 1,CI))
+ci_rvs_WC=apply(Rvs_WC, MARGIN = 1,CI)
 ci_rvs_SV=apply(Rvs_SV, MARGIN = 1,CI)
 # png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Stability_rv.png'),type='cairo')
 
@@ -118,9 +124,7 @@ p3=ggplot(df_quantiles_wc)+
   scale_x_log10(limits=c(NA,875))+
   # scale_x_continuous(trans='log10') +
   theme_classic()+
-  theme(legend.position = c(.95, .05),
-    legend.justification = c("right", "bottom"),
-    legend.box.just = "right")+
+  theme(legend.position = "none")+
   scale_fill_manual(name="Pooled data",values=cols) +
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
@@ -132,11 +136,13 @@ p4=ggplot(df_quantiles_sv)+
   # xlim(NA,875)+
   scale_x_log10(limits=c(NA,875))+
   # scale_x_continuous(trans='log10') +
+  scale_fill_manual(name="Pooled data",values=cols) +
   theme_classic()+
-  theme(legend.position = c(.95, .05),
+  theme(axis.title.y=element_blank(),
+    legend.position = c(.95, .05),
     legend.justification = c("right", "bottom"),
     legend.box.just = "right")+
-  scale_fill_manual(name="Pooled data",values=cols) +
+  guides(fill = FALSE)+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
 
@@ -145,9 +151,14 @@ p4
 ```
 
 ```{r}
-ggarrange(bxp, dp, bp + rremove("x.text"), 
-          labels = c("A", "B", "C"),
+ggarrange(p1, p2, p3,p4, 
+          labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2)
+
+  ggarrange(p1, p2, p3,p4, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2) %>% 
+   ggexport(filename = "../graphs/Stability.pdf")
 ```
 
 

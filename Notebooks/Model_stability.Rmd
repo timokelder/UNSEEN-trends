@@ -14,14 +14,19 @@ In this notebook, we assess the stability of the model over forecast length. Doe
 ## Import data and packages
 
 ```{r}
-dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-plotdir=paste0(dir,'/statistics/multiday/plots')
-#dir='/home/timok/Documents/ensex'
-#plotdir='/home/timok/Documents/ensex/R/graphs'
+# dir_lustre='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir_lustre=paste0(dir,'/statistics/multiday/plots')
+# dir_Norlaptop='/home/timok/Documents/ensex'
+# plotdir_Norlaptop='/home/timok/Documents/ensex/R/graphs'
+# dir_Perslaptop='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+# plotdir_Perslaptop='/home/timok/Documents/ensex/R/graphs'
+dir='/home/timok/Documents/ensex/EnsEx/Data'
+plotdir='/home/timok/Documents/ensex/R/graphs'
 source('Load_data.R')
+library("ggpubr")
 ```
 ## Plot empirical cumulative distribution functions for each leadtime
-We show the ecdf for the west coast of Norway and for Svalbard. The lead times seem similar.  
+We show the probability density for the west coast of Norway and for Svalbard. The lead times seem similar.  
 
 ```{r}
 require(plyr)
@@ -30,10 +35,6 @@ names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
 df_WC=adply(Extremes_WC, 1:3)
 df_SV=adply(Extremes_SV, 1:3)
 
-ggplot(df_WC, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = NULL, y = 'Precipitation')+
-  theme_classic() 
-ggplot(df_SV, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = 'Precipitation')+
-  theme_classic() 
 ```
 
 We would want to proof that they are similar. Therefore, we want to show the confidence interval of the ecdf of all lead times pooled together. The sample size should be the same as the ecdfs for each lead time, so we bootstrap the pooled leadtimes into series with equal length of the single leadtimes, with n=10000.  
@@ -45,6 +46,145 @@ bootstrapped_series_WC=sample(df_WC$V1,size = 875*10000,replace = T) #Same for W
 bootstrapped_array_SV=array(bootstrapped_series_SV,dim = c(875,10000)) #Creates an array with 10.000 series of 875 values
 bootstrapped_array_WC=array(bootstrapped_series_WC,dim = c(875,10000)) #Creates an array with 10.000 series of 875 values
 
+CI <- function(x) {
+quantile(x,probs=c(0.025,0.975))  ##lower and upper interval
+}  
+
+```
+
+
+In addition to the cumulative plot, this is a density plot. Without ci.. 
+```{r}
+p1=ggplot(df_WC, aes(x = V1, colour = Leadtime)) +
+  labs(x = 'Precipitation')+
+  geom_density(alpha = .3)+
+  theme_classic()
+
+p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
+  labs(x = 'Precipitation')+
+  geom_density(alpha = .3)+
+  theme_classic()
+p1
+p2
+# ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
+```
+
+What about empirical return value plots?  
+```{r}
+rps=35*25*4/1:(35*25*4) #The return periods for the entire ensemble of 3500 years
+rps_ld = 35*25/1:(35*25) #The return periods for the ensemble split up into 4 leadtimes, 875 years
+
+empirical_returnvalues <- function(x) { ##write a function to obtain the quantiles for the ecdf distribution  
+  return(quantile(x,probs = 1-1/(rps))) #returns the quantiles for the return values (1-1/return period)
+}
+
+Rvs_WC=apply(bootstrapped_array_WC, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
+Rvs_SV=apply(bootstrapped_array_SV, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
+
+#calculate the lower and upper interval from the 10.000 values for each quantile. 
+ci_rvs_WC=data.frame(apply(Rvs_WC, MARGIN = 1,CI))
+ci_rvs_SV=apply(Rvs_SV, MARGIN = 1,CI)
+# png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Stability_rv.png'),type='cairo')
+
+df_quantiles_wc <-df_WC %>% 
+  mutate(rps_all=rps,quantiles_all=quantile(V1,1-1/(rps)))
+
+df_quantiles_wc <- df_quantiles_wc %>% 
+  group_by(Leadtime) %>% 
+  mutate(rps_ld=rps_ld,quantiles_ld=quantile(V1,1-1/(rps_ld)))
+
+df_quantiles_wc$ci_2.5 <- ci_rvs_WC[1,]
+df_quantiles_wc$ci_97.5 <- ci_rvs_WC[2,]
+
+df_quantiles_sv <-df_SV %>% 
+  mutate(rps_all=rps,quantiles_all=quantile(V1,1-1/(rps)))
+
+df_quantiles_sv <- df_quantiles_sv %>% 
+  group_by(Leadtime) %>% 
+  mutate(rps_ld=rps_ld,quantiles_ld=quantile(V1,1-1/(rps_ld)))
+
+df_quantiles_sv$ci_2.5 <- ci_rvs_SV[1,]
+df_quantiles_sv$ci_97.5 <- ci_rvs_SV[2,]
+
+```
+
+```{r}
+cols=c("95 % CI"="black")
+p3=ggplot(df_quantiles_wc)+
+  geom_line(aes(x=rps_all,y=quantiles_all))+
+  geom_line(aes(x=rps_ld,y=quantiles_ld,col=Leadtime))+
+  geom_ribbon(aes(x=rps_all,ymin=ci_2.5,ymax=ci_97.5,fill="95 % CI"),alpha=0.1)+
+  # xlim(NA,875)+
+  scale_x_log10(limits=c(NA,875))+
+  # scale_x_continuous(trans='log10') +
+  theme_classic()+
+  theme(legend.position = c(.95, .05),
+    legend.justification = c("right", "bottom"),
+    legend.box.just = "right")+
+  scale_fill_manual(name="Pooled data",values=cols) +
+  xlab('Return period')+
+  ylab('Three-day precipitation (mm)')
+
+p4=ggplot(df_quantiles_sv)+
+  geom_line(aes(x=rps_all,y=quantiles_all))+
+  geom_line(aes(x=rps_ld,y=quantiles_ld,col=Leadtime))+
+  geom_ribbon(aes(x=rps_all,ymin=ci_2.5,ymax=ci_97.5,fill="95 % CI"),alpha=0.1)+
+  # xlim(NA,875)+
+  scale_x_log10(limits=c(NA,875))+
+  # scale_x_continuous(trans='log10') +
+  theme_classic()+
+  theme(legend.position = c(.95, .05),
+    legend.justification = c("right", "bottom"),
+    legend.box.just = "right")+
+  scale_fill_manual(name="Pooled data",values=cols) +
+  xlab('Return period')+
+  ylab('Three-day precipitation (mm)')
+
+p3
+p4
+```
+
+```{r}
+ggarrange(bxp, dp, bp + rremove("x.text"), 
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2)
+```
+
+
+```{r}
+
+p3 <- capture_base_plot({
+  
+  plot(rps,quantile(Extremes_WC,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
+       xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
+  for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_WC[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
+  
+  polygon(c(rps, rev(rps)), c(ci_rvs_WC[2,], rev(ci_rvs_WC[1,])),col = rgb(0,0,0,alpha = 0.2), border = NA)
+})
+
+p4 <- capture_base_plot({
+  
+  plot(rps,quantile(Extremes_SV,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
+       xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
+  for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_SV[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
+  
+  polygon(c(rps, rev(rps)), c(ci_rvs_SV[2,], rev(ci_rvs_SV[1,])),col = rgb(0,0,0,alpha = 0.2), border = NA)
+
+})
+
+```
+
+
+
+And the cumulative density plots
+```{r}
+ggplot(df_WC, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = NULL, y = 'Precipitation')+
+  theme_classic() 
+ggplot(df_SV, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = 'Precipitation')+
+  theme_classic() 
+```
+
+```{r}
 ##Here I dont know how to get the 5 and 95% confidence intervals for the ecdf from the 10.000 series. Now, I calculate the quantiles over the ecdf for each of the series, and then calculate the lower and upper interval for the quantiles over the 10.000 values. 
 ecdf_datavalues <- function(x) { ##write a function to obtain the quantiles for the ecdf distribution  
   b=ecdf(x)
@@ -53,10 +193,6 @@ ecdf_datavalues <- function(x) { ##write a function to obtain the quantiles for 
 
 ecdfs_SV=apply(bootstrapped_array_SV, MARGIN = 2,ecdf_datavalues) #apply the ecdf function to each of the 10.000 series
 ecdfs_WC=apply(bootstrapped_array_WC, MARGIN = 2,ecdf_datavalues) #apply the ecdf function to each of the 10.000 series
-
-CI <- function(x) {
-quantile(x,probs=c(0.05,0.95))  ##lower and upper interval
-}  
 
 #calculate the lower and upper interval from the 10.000 values for each quantile. 
 ci_WC=apply(ecdfs_WC, MARGIN = 1,CI)
@@ -75,8 +211,8 @@ ggplot(df_SV, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = NULL, y = 'Pre
 
 ###I cant do it with ggplot.. Tips? :)
 
-
 ```
+
 
 So instead lets try base R..
 
@@ -116,53 +252,4 @@ lines(ecdf(ci_SV[1,]), do.points=F,lty=2,col='grey')
 lines(ecdf(ci_SV[2,]), do.points=F,lty = 2,col='grey')
                                           
 ```
-
-In addition to the cumulative plot, this is a density plot. Without ci.. 
-```{r}
-ggplot(df_WC, aes(x = V1, fill = Leadtime)) +
-  labs(x = 'Precipitation')+
-  geom_density(alpha = .3)+
-  theme_classic()
-
-ggplot(df_SV, aes(x = V1, fill = Leadtime)) +
-  labs(x = 'Precipitation')+
-  geom_density(alpha = .3)+
-  theme_classic()
-# ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
-```
-
-What about empirical return value plots?  
-```{r}
-rps=35*25*4/1:(35*25*4) #Return periods
-
-empirical_returnvalues <- function(x) { ##write a function to obtain the quantiles for the ecdf distribution  
-  return(quantile(x,probs = 1-1/(rps))) #returns the quantiles for the return values (1-1/return period)
-}
-
-Rvs_WC=apply(bootstrapped_array_WC, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
-Rvs_SV=apply(bootstrapped_array_SV, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
-
-#calculate the lower and upper interval from the 10.000 values for each quantile. 
-ci_rvs_WC=apply(Rvs_WC, MARGIN = 1,CI)
-ci_rvs_SV=apply(Rvs_SV, MARGIN = 1,CI)
-
-# png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Stability_rv.png'),type='cairo')
-
-##plot for WC
-plot(rps,quantile(Extremes_WC,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
-     xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
-for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_WC[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
-
-polygon(c(rps, rev(rps)), c(ci_rvs_WC[2,], rev(ci_rvs_WC[1,])),col = rgb(0,0,0,alpha = 0.3), border = NA)
-# dev.off()
-
-#and for Svalbard
-plot(rps,quantile(Extremes_SV,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
-     xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
-for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_SV[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
-
-polygon(c(rps, rev(rps)), c(ci_rvs_SV[2,], rev(ci_rvs_SV[1,])),col = rgb(0,0,0,alpha = 0.3), border = NA)
-
-```
-
 

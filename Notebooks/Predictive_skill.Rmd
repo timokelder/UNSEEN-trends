@@ -276,9 +276,12 @@ ggplot() +
 ```{r}
 ##############older stuff
 Var_signal=sd(predictor_all)^2 #The signal is the interannual variance of the model mean
+Var_signal_obs=sd(obs)^2 #The signal is the interannual variance of the model mean
 
-sd_ensemble=apply(Extremes,MARGIN = c(1,2),FUN=sd) #The standard deviation for each ensemble member and lead time
+# sd_ensemble=apply(Extremes_WC,MARGIN = c(1,2),FUN=sd) #The standard deviation for each ensemble member and lead time
+sd_ensemble=apply(Extremes_WC,MARGIN = c(3),FUN=sd) #The standard deviation for each ensemble member and lead time
 Var_noise=mean(sd_ensemble)^2 #The noise is the variance of the individual ensemble members about the ensemble mean
+Var_noise_obs=sd(obs)^2 #The noise is the variance of the individual ensemble members about the ensemble mean
 
 PC_mod=sqrt(Var_signal/(Var_signal+Var_noise))# Intrinsic model predictability of the signal = square root of (Var signal/Var total) 
 

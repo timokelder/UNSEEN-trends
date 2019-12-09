@@ -20,8 +20,10 @@ The data for the West coast and Svalbard are loaded.
 # plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/Documents/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
-dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
-plotdir='/home/timok/Documents/ensex/R/graphs'
+# dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
+
+dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
 source('Load_data.R')
 library(extRemes)
 library("ggpubr")
@@ -43,6 +45,10 @@ We fit the GEV distribution to the simulated and to the observed data.  The para
 ```{r}
 
 extremes_wc= df_WC$V1 * mean(obs)/mean(df_WC$V1) ## we create a mean bias corrected series  
+print(paste('We use the mean correction factor:', as.character(mean(obs)/mean(df_WC$V1))))
+print(paste('median:', as.character(median(obs)/median(df_WC$V1))))
+print(paste('5-year:', as.character(quantile(obs,probs = 1-1/5)/quantile(df_WC$V1,probs = 1-1/5))))
+print(paste('20-year:', as.character(quantile(obs,probs = 1-1/20)/quantile(df_WC$V1,probs = 1-1/20))))
 
 ##Fit GEV to 1) observed 2) raw SEAS5 3) mean bias corrected SEAS5
 fit_obs <- fevd(x = obs, threshold = NULL, threshold.fun = ~1, location.fun = ~1,
@@ -77,13 +83,13 @@ datapoints_obs=data.frame(cbind(rp_obs,obs_sorted))
 rp_S5=35*25*4/1:(35*25*4) 
 S5_raw_sorted=sort(df_WC$V1,decreasing = T) 
 S5_corrected_sorted=sort(extremes_wc,decreasing = T)
-datapoints_S5=data.frame(cbind(rperiods,S5_raw_sorted,S5_corrected_sorted,obs_sorted))
+datapoints_S5=data.frame(cbind(rp_S5,S5_raw_sorted,S5_corrected_sorted,obs_sorted))
 
 cols=c("SEAS5"="black","SEAS5 mean bias corrected"="orange","Observations"="blue") 
-ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
-  geom_line(aes(y = S5),col=1)+
+p1=ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
+  geom_line(aes(y = S5),col='black')+
   geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5"),alpha=0.3)+
-  geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_raw_sorted),col=1,size=1)+
+  geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_raw_sorted),col='black',size=1)+
   geom_line(aes(y = S5_corrected),col='orange')+
   geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 mean bias corrected'), alpha=0.3)+
   geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_corrected_sorted),col='orange',size=1)+
@@ -99,10 +105,11 @@ ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
     legend.title = element_blank())+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
-  
 
-length(df_WC$V1)
-length(35*25*4/1:(35*25*4))
+p1
+# ggsave(p1,filename = "../graphs/Fidelity_EVT.png")
+
+
 ```
 
 And then we compare the 1981 and 2016 return value plots for SEAS5

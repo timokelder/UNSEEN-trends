@@ -121,18 +121,21 @@ df_A_all=data.frame('y.i'=A_all$y.i,'obar.i'=A_all$obar.i,'prob.y'=A_all$prob.y)
 df_A=rbind(df_A2,df_A3,df_A4,df_A5)
 # lm(formula = obar.i~y.i,data = df_A,weights = prob.y)
 
-ggplot()+
+p1=ggplot()+
   geom_point(data=df_A,aes(x = y.i,y=obar.i,size=prob.y,color=factor(Leadtime)))+
   geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,fill=factor(Leadtime),color=factor(Leadtime)))+
   geom_point(data=df_A_all,aes(x = y.i,y=obar.i,size=prob.y))+
+  geom_smooth(data=df_A_all,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y),color='black', fill='black')+
   geom_line(data=df_A,aes(x=y.i,y=y.i))+
   xlim(0,1)+
   ylim(0,1)+
+  ylab('Observed frequencies')+
+  xlab('forecast probabilities')+
   theme_classic()+
-  theme(legend.position = c(.9, .2))
+  theme(legend.position = 'none')
     # legend.justification = c("right", "bottom"),
     # legend.box.just = "right",
-    # legend.title = element_blank())+
+    # legend.title = element_blank())
 
 
 
@@ -171,23 +174,31 @@ df_A_all=data.frame('y.i'=A_all$y.i,'obar.i'=A_all$obar.i,'prob.y'=A_all$prob.y)
 df_A=rbind(df_A2,df_A3,df_A4,df_A5)
 # lm(formula = obar.i~y.i,data = df_A,weights = prob.y)
 
-ggplot()+
+p2=ggplot()+
   geom_point(data=df_A,aes(x = y.i,y=obar.i,size=prob.y,color=factor(Leadtime)))+
   geom_smooth(data=df_A,method = "lm", mapping = aes(x = y.i,y=obar.i,weight = prob.y,fill=factor(Leadtime),color=factor(Leadtime)))+
   geom_point(data=df_A_all,aes(x = y.i,y=obar.i,size=prob.y))+
   geom_line(data=df_A,aes(x=y.i,y=y.i))+
   xlim(0,1)+
   ylim(0,1)+
+  ylab('Observed frequencies')+
+  xlab('forecast probabilities')+
   theme_classic()+
-  theme(legend.position = c(.9, .2))
+  theme(legend.position = c(.9, .2),
     # legend.justification = c("right", "bottom"),
     # legend.box.just = "right",
-    # legend.title = element_blank())+
+    legend.title = element_blank())+
+  guides(size='none')
 
 
-A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
+# A<- verify(count_obs, pred, frcst.type = "prob", obs.type = "binary")
+# 
+# reliability.plot(A, titl = "2yr")
 
-reliability.plot(A, titl = "2yr")
+ggarrange(p1,p2,
+          labels = c("A", "B")) %>%
+   ggsave(filename = "../graphs/Reliability.png", width = 8, height = 4)
+
 ```
 
 This also does not seem convincing to me. The probabilities over the years are quite similar, because precipitation is not predictable after a month. *Am I applying this correctly? What does this mean for the reliability? Do we require reliability of the model to be able to trust the trends in SEAS5? Or do we trust the trends in SEAS5 because the observations lie within the large ensemble, as previously shown with the rank histograms in [Predictive skill](Predictive_skill.md)? What is Antje's opinion -> we will meet November 22nd*

@@ -19,7 +19,7 @@ In this notebook, we will first show the forecasts of the Norwegian West Coast c
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
 dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
-
+require(ggpubr)
 source('Load_data.R')
 ```
 
@@ -33,8 +33,8 @@ Plot the observations and the forecasts for:
 
 
 ```{r fig1, fig.height = 9, fig.width = 5, fig.align = "center"}
-ggplot()+
-  geom_line(df=Extremes_WC,aes(x=))
+# ggplot()+
+#   geom_line(df=Extremes_WC,aes(x=))
 
 par(mfrow=c(3,1))
 plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON three-day precipitation maxima',xlab = '')
@@ -241,7 +241,7 @@ Spread_RMSE_line_sv=
 
 ggarrange(Spread_RMSE_line_wc,Spread_RMSE_line_sv,
           labels = c("A", "B")) %>%
-   ggexport(filename = "../graphs/Spread.RMSE.pdf", width = 8, height = 4)
+   ggsave(filename = "../graphs/Spread.RMSE.png", width = 8, height = 4)
 
 #And calculate the spread/RMSE per leadtime
 spread_wc/ens_mean_RMSE_wc

@@ -118,20 +118,18 @@ EVT_plot <- function(obs=obs,GEV_type) {
 p1=EVT_plot(obs=obs,GEV_type = 'GEV')
 p2=EVT_plot(obs=obs,GEV_type = 'Gumbel')
 
-p1
-p2
 # ggsave(p1,filename = "../graphs/Fidelity_EVT.png")
 
 ###Sensitivity to estimation method and extreme value distribution
 #type= c("GEV", "GP", "PP", "Gumbel", "Exponential")
 #method= c("MLE", "GMLE", "Bayesian", "Lmoments")
-Obs_GEV_MLE=fit_obs <- fevd(x = obs)
-Obs_GEV_Bayes=fit_obs <- fevd(x = obs,method = "Bayesian")
-Obs_GEV_Bayes=fit_obs <- fevd(x = obs,method = "Lmoments")
-Obs_Gumbel=fit_obs <- fevd(x = obs,type = 'Gumbel')
+Obs_GEV_MLE <- fevd(x = obs)
+Obs_GEV_Bayes <- fevd(x = obs,method = "Bayesian")
+Obs_GEV_Bayes <- fevd(x = obs,method = "Lmoments")
+Obs_Gumbel <- fevd(x = obs,type = 'Gumbel')
 lr.test(Obs_Gumbel,Obs_GEV_MLE)
-SEAS5_GEV=fevd(x = extremes_wc,type='GEV') #the bias corrected version
-SEAS5_Gumbel=fevd(x = extremes_wc,type='Gumbel')
+SEAS5_GEV <- fevd(x = extremes_wc,type='GEV') #the bias corrected version
+SEAS5_Gumbel <- fevd(x = extremes_wc,type='Gumbel')
 lr.test(SEAS5_Gumbel,SEAS5_GEV)
 obs_test <- obs
 obs_test['2005'] <- obs['2005']*1.1
@@ -167,6 +165,7 @@ RV_ci <- function(extremes,covariate,return_period,covariate_values,GEV_type) { 
   return(rvs)
 }
 
+#### non-stationarity for Gumbel doesnt work..
 extremes = extremes_wc
 covariate = c(df_WC$Year)
 return_period = rperiods
@@ -175,6 +174,7 @@ GEV_type='Gumbel'
 fit <- fevd(extremes, type = GEV_type, location.fun = ~ covariate, ##Fitting the gev with a location and scale parameter linearly correlated to the covariate (years)
                scale.fun = ~ covariate)#, use.phi = TRUE)
 params_matrix <- make.qcov(fit, vals = list(mu1 = covariate_values,sigma1 = covariate_values)) #Create a parameter matrix for the GEV fit
+params_matrix['shape'] <- NA
 rvs=ci.fevd(fit,alpha = 0.05,type='return.level',return.period = return_period,method ="normal",qcov=params_matrix)  #Calculate the return values and confidence intervals for each year   
 
 
@@ -254,7 +254,55 @@ Plot_non_stationary(GEV_type = 'Gumbel')
 
 We plot the West coast region for the SEAS5 trend and the observed trend. We then perform a mean bias correction to SEAS5.  
 ```{r}
+####Testing for Non-stationarity in the observed
+Obs_GEV_stat <- fevd(x = obs)
+Obs_GEV_non_stat <- fevd(obs,
+                         type = 'GEV',
+                         location.fun = ~ c(1:35),
+                         scale.fun = ~ c(1:35), ##GEV with a location and scale parameter linearly correlated to the covariate (years)
+                         use.phi = TRUE)
 
+lr.test(Obs_GEV_stat,Obs_GEV_non_stat)
+
+####Testing for Non-stationarity over Norway in SEAS5
+SEAS5_GEV_stat=fevd(x = extremes_wc,
+                    type='GEV') #the bias corrected version
+SEAS5_GEV_non_stat=fevd(x = extremes_wc,
+                    type='GEV',
+                    location.fun = ~ c(df_WC$Year),
+                    scale.fun = ~ c(df_WC$Year),
+                    use.phi = TRUE) #GEV with a location and scale parameter linearly correlated to the covariate (years)
+
+lr.test(SEAS5_GEV_stat,SEAS5_GEV_non_stat)
+
+###Calculating the uncertainty for the obs
+qcovs <- make.qcov(Obs_GEV_non_stat, vals = list(mu1 = c(1,35),phi1 = c(1,35))) #Create a parameter matrix for the GEV fit
+rvs_obs=ci(Obs_GEV_non_stat,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcov_obs[2,],qcov.base=qcov_obs[1,])  #Calculate the return values and confidence intervals for each year   
+rvs_obs_base=ci(Obs_GEV_non_stat,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
+rvs_obs_trend_percent=100*rvs_obs/rvs_obs_base[2]
+
+
+rvs_SEAS5=ci(SEAS5_GEV_non_stat,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcov_obs[2,],qcov.base=qcov_obs[1,])  #Calculate the return values and confidence intervals for each year   
+rvs_SEAS5_base=ci(SEAS5_GEV_non_stat,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
+rvs_SEAS5_trend_percent=100*rvs_SEAS5/rvs_SEAS5_base[2]
+
+####Normal approximation cannot be good for high return levels -> the distribution is not normal.
+
+#### The profile likelihood should be better, but it is not implemented?
+ci.fevd.bayesian(Obs_GEV_non_stat, type = "return.level", method = "proflik",
+    xrange = c(3.5,7.75), verbose = TRUE)
+data(Fort)
+
+fit <- fevd(Prec, Fort, threshold = 2, type = "GP",
+    units = "inches", verbose = TRUE)
+
+ci(fit, type = "parameter")
+ci.fevd.mle(fit, type = "return.level", method = "proflik",
+    xrange = c(3.5,7.75), verbose = TRUE)
+
+return.level(SEAS5_GEV_non_stat, return.period = 100,do.ci = T, qcov = qcovs[2,], qcov.base = qcovs[1,],method='boot') ##Only normal approximation available
+
+###Plotting the uncertainty estimation
 ci_wc=RV_ci(extremes = df_WC$V1,covariate = c(df_WC$Year),return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
 ci_obs=RV_ci(extremes = obs,covariate = c(1:35),return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
 
@@ -286,7 +334,23 @@ p_trend_wc=
 And for Svalbard
 
 ```{r}
-##Svalbard 
+####Testing for Non-stationarity over Svalbard in SEAS5
+SEAS5_GEV_stat_SV=fevd(x = df_SV$V1,
+                    type='GEV') #the bias corrected version
+SEAS5_GEV_non_stat_SV=fevd(x = df_SV$V1,
+                    type='GEV',
+                    location.fun = ~ c(df_WC$Year),
+                    scale.fun = ~ c(df_WC$Year),
+                    use.phi = TRUE) #GEV with a location and scale parameter linearly correlated to the covariate (years)
+
+lr.test(SEAS5_GEV_non_stat_SV,SEAS5_GEV_stat_SV)
+
+##Calcualte the uncertianty
+rvs_SEAS5_SV_trend_mm=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[2,],qcov.base=qcovs[1,])  #Calculate the return values and confidence intervals for each 
+rvs_SEAS5_SV_base=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
+rvs_SEAS5_SV_trend_percent=100*rvs_SEAS5_SV_trend_mm/rvs_SEAS5_SV_base[2]
+
+##And illustrating the non-stationarity
 ci_sv=RV_ci(extremes = df_SV$V1,covariate = c(df_SV$Year),return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
 
 p_trend_sv=
@@ -317,6 +381,158 @@ CD=
             common.legend = T,
             ncol = 1, nrow = 2) %>% 
     ggsave(filename = "../graphs/Trends.png")
+
+```
+#Bootstrap median extremes (2-year events)
+Similar to comparing the distribution of the unseen ensemble to the observations by bootstrapping, here we test whether the observed trend falls within the bootstrapped trends.   
+```{r}
+
+
+##Bootstrap the UNSEEN ensemble and calculate the trend for each bootstrap
+bootstrapped_series_WC_biascor=sample(extremes_wc_biascor,size = 35*10000,replace = T) #For WC
+bootstrapped_array_WC_biascor=array(bootstrapped_series_WC_biascor,dim = c(35,10000)) #Same for the mean bias corrected series
+
+plot_trend <- function(return_value) {
+  ##Observed trend in 2-year events
+  ci_obs_rv=RV_ci(extremes = obs,covariate = c(1:35),return_period = return_value,covariate_values = c(1:35),GEV_type='GEV')
+
+  Trend_bootstrap <- function(extremes) {
+    tryCatch(
+      expr = {ci_wc_biascor=RV_ci(extremes,covariate = 1:35,return_period = return_value,covariate_values = c(1:35),GEV_type='GEV')
+      return(ci_wc_biascor[,2])},
+      error = function(e){
+        message(paste0('Error! failed fit'))
+        return(rep(NA,35))
+          # Do this if an error is caught...
+      })
+      
+  }
+  bootstrapped_trend=apply(bootstrapped_array_WC_biascor,MARGIN = 2,FUN = Trend_bootstrap)
+  
+  #### 47 out of 10.000 fits failed. 
+  print(sum(is.na(bootstrapped_trend[1,])))
+  
+  quant_fun_low <- function(x) {
+    quantile(x,probs = 0.025, na.rm = TRUE)
+  }
+  quant_fun_high <- function(x) {
+    quantile(x,probs = 0.975,na.rm = T)
+  }
+  
+  ci_low <- apply(bootstrapped_trend, MARGIN = 1, quant_fun_low)
+  ci_high <- apply(bootstrapped_trend, MARGIN = 1, quant_fun_high)
+  
+  ###Bias corrected series
+  cols=c("Traditional"="blue","UNSEEN-trends"="orange")
+  p_trend_wc=
+    ggplot()+
+    geom_point(aes(x = year_vector,y = extremes_wc),size=2,alpha=0.051)+
+     # scale_size_manual(values = seq(0.1,3,length.out = 3499)) +
+    geom_point(aes(x=1981:2015,y =obs),col='blue',shape=4,size=2,stroke=1.5)+
+    # geom_line(aes(x=1981:2015,y = bootstrapped_trend[,1]),col='orange')+
+    geom_ribbon(aes(x=1981:2015,ymin = ci_low,ymax=ci_high,fill="UNSEEN-trends"),alpha=0.3)+
+    geom_line(aes(x=1981:2015,y = ci_obs_rv[,2]),col='blue')+
+    # geom_ribbon(aes(x=1981:2015,ymin = ci_obs[,1],ymax=ci_obs[,3],fill="Traditional"),alpha=0.2)+
+    theme_classic()+
+    ylab('Three-day precipitation (mm)')+
+    scale_fill_manual(name="Method",values=cols) +
+    theme(axis.title.x=element_blank())
+  
+    
+  trend_percent_boot=100*(bootstrapped_trend[35,]-bootstrapped_trend[1,])/bootstrapped_trend[1,]
+  Trend_percent_obs=100*(ci_obs_rv[35,2]-ci_obs_rv[1,2])/ci_obs_rv[1,2]
+  histo=ggplot()+
+    geom_histogram(aes(x=trend_percent_boot),color='black',fill='orange',alpha=0.5)+
+    xlim(-50,50)+
+    geom_vline(aes(xintercept=quantile(trend_percent_boot,probs = c(0.025,0.975),na.rm=T)),
+                color="black", linetype="dashed", size=1)+
+    geom_vline(aes(xintercept=Trend_percent_obs),
+                color="blue", size=2)+
+    # labs(main=paste(return_value,'-year'),x ="Trend over 35 years (%)")+
+    theme_classic()+
+    clean_theme()
+  
+  histo_grob=ggplotGrob(histo)
+  
+  p_trend_rv=p_trend_wc + annotation_custom(grob = histo_grob, 
+                                 xmin = 2005, xmax = 2015, 
+                         ymin = min(extremes_wc)-15, ymax=max(extremes_wc)/3)
+  return(p_trend_rv)
+}
+
+p_trend_2yr=plot_trend(2)
+p_trend_100yr=plot_trend(100)
+
+ggarrange(p_trend_2yr+theme(legend.position = "none") ,p_trend_100yr+ theme(legend.position = "none"),
+           labels = c("A", "B"))%>% 
+  ggsave(filename = "../graphs/Trend_bootstrap.png",width =8,height = 4 )
+
+
+```
+
+
+```{r}
+ci_obs_100=RV_ci(extremes = obs,covariate = c(1:35),return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
+
+Trend_bootstrap_100 <- function(extremes) {
+  tryCatch(
+    expr = {ci_wc_biascor=RV_ci(extremes,covariate = 1:35,return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
+    return(ci_wc_biascor[,2])},
+    error = function(e){
+      message(paste0('Error! failed fit'))
+      return(rep(NA,35))
+        # Do this if an error is caught...
+    })
+    
+}
+bootstrapped_trend_100=apply(bootstrapped_array_WC_biascor,MARGIN = 2,FUN = Trend_bootstrap_100)
+
+#### 47 out of 10.000 fits failed. 
+sum(is.na(bootstrapped_trend[1,]))
+
+quant_fun_low <- function(x) {
+  quantile(x,probs = 0.025, na.rm = TRUE)
+}
+quant_fun_high <- function(x) {
+  quantile(x,probs = 0.975,na.rm = T)
+}
+quant_fun_median <- function(x) {
+  quantile(x,probs = 0.5,na.rm = T)
+}
+
+ci_low_100 <- apply(bootstrapped_trend_100, MARGIN = 1, quant_fun_low)
+ci_high_100 <- apply(bootstrapped_trend_100, MARGIN = 1, quant_fun_high)
+ci_median_100 <- apply(bootstrapped_trend_100, MARGIN = 1, quant_fun_median)
+
+
+###Bias corrected series
+cols=c("Traditional"="blue","UNSEEN-trends"="orange")
+# p_trend_wc=
+  ggplot()+
+  geom_point(aes(x = year_vector,y = extremes_wc),size=2,alpha=0.051)+
+   # scale_size_manual(values = seq(0.1,3,length.out = 3499)) +
+  geom_point(aes(x=1981:2015,y =obs),col='blue',shape=4,size=2,stroke=1.5)+
+  # geom_line(aes(x=1981:2015,y = bootstrapped_trend[,1]),col='orange')+
+  geom_ribbon(aes(x=1981:2015,ymin = ci_low_100,ymax=ci_high_100,fill="UNSEEN-trends"),alpha=0.3)+
+  geom_line(aes(x=1981:2015,y = ci_obs_100[,2]),col='blue')+
+  # geom_ribbon(aes(x=1981:2015,ymin = ci_obs[,1],ymax=ci_obs[,3],fill="Traditional"),alpha=0.2)+
+  theme_classic()+
+  ylab('Three-day precipitation (mm)')+
+  scale_fill_manual(name="Method",values=cols) +
+  theme(axis.title.x=element_blank())
+
+  
+trend_percent_boot_100=100*(bootstrapped_trend_100[35,]-bootstrapped_trend_100[1,])/bootstrapped_trend_100[1,]
+Trend_percent_obs_100=100*(ci_obs_100[35,2]-ci_obs_100[1,2])/ci_obs_100[1,2]
+ggplot()+
+  geom_histogram(aes(x=trend_percent_boot_100),color='black',fill='orange',alpha=0.5)+
+  xlim(-100,100)+
+  geom_vline(aes(xintercept=quantile(trend_percent_boot_100,probs = c(0.025,0.975),na.rm=T)),
+              color="black", linetype="dashed", size=1)+
+  geom_vline(aes(xintercept=Trend_percent_obs_100),
+              color="blue", size=2)+
+  labs(main='2-year',x ="Trend over 35 years (%)")+
+  theme_classic()
 
 ```
 
@@ -438,6 +654,23 @@ make_plots<-function(Extremes_gev,Extremes_gev00,Extremes_senorge,gridcell){
   return(  c(2*rv[,4]/rv[,2],2*rv_00[,4]/rv_00[,2],
              100*rv[,2]/rv_2,  100*rv_00[,2]/rv_2_00))
 }
+
+# Emphasize the tail differences more by using different scale parameters.
+par(mfrow=c(1,2))
+plot(x, qevd(x, 1, 0.5, -0.5), type="l", col="blue", lwd=1.5,
+ylab="GEV df")
+lines(x, qevd(x, 1, 1, 0), col="lightblue", lwd=1.5)
+lines(x, qevd(x, 1, 2, 0.5), col="darkblue", lwd=1.5)
+legend("topright", legend=c("(reverse) Weibull", "Gumbel", "Frechet"),
+col=c("blue", "lightblue", "darkblue"), bty="n", lty=1, lwd=1.5)
+
+plot(x, devd(x, 1, 0.5, -0.5, 1, type="GP"), type="l", col="blue", lwd=1.5,
+ylab="GP df")
+lines(x, devd(x, 1, 1, 0, 1, type="GP"), col="lightblue", lwd=1.5)
+lines(x, devd(x, 1, 2, 0.5, 1, type="GP"), col="darkblue", lwd=1.5)
+legend("topright", legend=c("Beta", "Exponential", "Pareto"),
+col=c("blue", "lightblue", "darkblue"), bty="n", lty=1, lwd=1.5)
+
 ```
 
 

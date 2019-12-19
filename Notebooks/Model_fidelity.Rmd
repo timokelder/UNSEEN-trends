@@ -56,10 +56,10 @@ plot_hist <- function(bootstrapped_array_WC,fun,main) {
 
 hist(bootstrapped_fun,col=alpha('orange',0.5))
 
-plot_hist <- function(bootstrapped_array_WC,fun,main) {
+plot_hist <- function(bootstrapped_array_WC,fun,main,col) {
   bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)
   ggplot()+
-    geom_histogram(aes(x=bootstrapped_fun),color='black',fill='orange')+
+    geom_histogram(aes(x=bootstrapped_fun),color='black',fill=col,alpha=0.5)+
     geom_vline(aes(xintercept=quantile(bootstrapped_fun,probs = c(0.025,0.975))),
               color="black", linetype="dashed", size=1)+
     geom_vline(aes(xintercept=fun(obs)),
@@ -70,22 +70,25 @@ plot_hist <- function(bootstrapped_array_WC,fun,main) {
 
   geom_line(aes(x=rep(quantile(bootstrapped_fun,probs = c(0.025)),2),y=c(0,5000)))
 
-p1=plot_hist(bootstrapped_array_WC,mean,'Mean')
-p2=plot_hist(bootstrapped_array_WC,sd,'Standard Deviation')
-p3=plot_hist(bootstrapped_array_WC,skewness,'Skewness')
-p4=plot_hist(bootstrapped_array_WC,kurtosis,'Kurtosis')
+p1=plot_hist(bootstrapped_array_WC,mean,'Mean','black')
+p2=plot_hist(bootstrapped_array_WC,sd,'Standard Deviation','black')
+p3=plot_hist(bootstrapped_array_WC,skewness,'Skewness','black')
+p4=plot_hist(bootstrapped_array_WC,kurtosis,'Kurtosis','black')
 
-p1_cor=plot_hist(bootstrapped_array_WC_biascor,mean,'Mean')
-p2_cor=plot_hist(bootstrapped_array_WC_biascor,sd,'Standard Deviation')
-p3_cor=plot_hist(bootstrapped_array_WC_biascor,skewness,'Skewness')
-p4_cor=plot_hist(bootstrapped_array_WC_biascor,kurtosis,'Kurtosis')
+p1_cor=plot_hist(bootstrapped_array_WC_biascor,mean,'Mean','orange')
+p2_cor=plot_hist(bootstrapped_array_WC_biascor,sd,'Standard Deviation','orange')
+p3_cor=plot_hist(bootstrapped_array_WC_biascor,skewness,'Skewness','orange')
+p4_cor=plot_hist(bootstrapped_array_WC_biascor,kurtosis,'Kurtosis','orange')
 
 ggarrange(p1,p2,p3,p4,
           labels = c("A", "B","C","D"),
-          ncol = 2, nrow = 2)
-# %>% 
-  ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )
+          ncol = 2, nrow = 2)%>% 
+  ggsave(filename = "../graphs/Fidelity_UNSEEN.png",width =8,height = 8 )
 
+ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
+          labels = c("A", "B","C","D"),
+          ncol = 2, nrow = 2)%>% 
+  ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.png",width =8,height = 8 )
 
 ```
 

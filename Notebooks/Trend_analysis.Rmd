@@ -239,12 +239,12 @@ p_sv=ggplot(data = rvs_SV,aes(x=rperiods))+
 # scale_colour_manual(name="Years",values=cols)#, guide = guide_legend(override.aes=aes(fill=NA)))
 
 ggarrange(p_wc, p_sv,
-          labels = c("A", "B"),
+          labels = c("C", "D"),
           common.legend = T,
           ncol = 2, nrow = 1)
 }
 
-AB=Plot_non_stationary(GEV_type = 'GEV')
+CD=Plot_non_stationary(GEV_type = 'GEV')
 Plot_non_stationary(GEV_type = 'Gumbel')
 
 ```
@@ -369,9 +369,9 @@ ggplot()+
 # lines(1981:2015,ci_sv[,1],col='orange',type = 'l',lty=2,lwd=3)
 # lines(1981:2015,ci_sv[,2],col='orange',lwd=2)
 
-CD=
+AB=
   ggarrange(p_trend_wc, p_trend_sv,
-          labels = c("C", "D"),
+          labels = c("A", "B"),
           common.legend = T,
           ncol = 2, nrow = 1)
 
@@ -380,7 +380,7 @@ CD=
             legend='top',
             common.legend = T,
             ncol = 1, nrow = 2) %>% 
-    ggsave(filename = "../graphs/Trends.png")
+    ggsave(filename = "../graphs/Trends2.png")
 
 ```
 #Bootstrap median extremes (2-year events)

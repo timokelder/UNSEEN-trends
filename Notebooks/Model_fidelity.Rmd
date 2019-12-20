@@ -45,16 +45,16 @@ bootstrapped_series_WC=sample(df_WC$V1,size = 35*10000,replace = T) #For WC
 bootstrapped_series_WC_biascor=sample(extremes_wc_biascor,size = 35*10000,replace = T) #For WC
 bootstrapped_array_WC=array(bootstrapped_series_WC,dim = c(35,10000)) #Creates an array with 10.000 series of 35 values
 bootstrapped_array_WC_biascor=array(bootstrapped_series_WC_biascor,dim = c(35,10000)) #Same for the mean bias corrected series
-plot_hist <- function(bootstrapped_array_WC,fun,main) {
-  bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)
-  hist(bootstrapped_fun,col=alpha('orange',0.5),main=main)
-  # quantile(bootstrapped_skewness,probs = c(0.025,0.975))
-  lines(x=rep(quantile(bootstrapped_fun,probs = c(0.025)),2),y=c(0,5000))
-  lines(x=rep(quantile(bootstrapped_fun,probs = c(0.975)),2),y=c(0,5000))
-  lines(x=rep(fun(obs),2),y=c(0,5000),lwd=2,col='blue')
-}
-
-hist(bootstrapped_fun,col=alpha('orange',0.5))
+# plot_hist <- function(bootstrapped_array_WC,fun,main) {
+#   bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)
+#   hist(bootstrapped_fun,col=alpha('orange',0.5),main=main)
+#   # quantile(bootstrapped_skewness,probs = c(0.025,0.975))
+#   lines(x=rep(quantile(bootstrapped_fun,probs = c(0.025)),2),y=c(0,5000))
+#   lines(x=rep(quantile(bootstrapped_fun,probs = c(0.975)),2),y=c(0,5000))
+#   lines(x=rep(fun(obs),2),y=c(0,5000),lwd=2,col='blue')
+# }
+# 
+# hist(bootstrapped_fun,col=alpha('orange',0.5))
 
 plot_hist <- function(bootstrapped_array_WC,fun,main,col) {
   bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)

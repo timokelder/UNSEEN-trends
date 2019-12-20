@@ -155,11 +155,11 @@ ggarrange(p1, p2, p3,p4,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2)
 
-  ggarrange(p1, p2, p3,p4, 
-          labels = c("A", "B", "C", "D"),
-          hjust = c(-0.5,1,-0.5,0),
-          ncol = 2, nrow = 2) %>% 
-   ggexport(filename = "../graphs/Stability.pdf", width = 8, height = 8)
+ggarrange(p1, p2, p3,p4, 
+        labels = c("A", "B", "C", "D"),
+        hjust = c(-0.5,1,-0.5,0),
+        ncol = 2, nrow = 2) %>% 
+ ggsave(filename = "../graphs/Stability.png", width = 8, height = 8)
 
 
 ```

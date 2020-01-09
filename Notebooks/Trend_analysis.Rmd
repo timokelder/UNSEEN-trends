@@ -50,6 +50,8 @@ print(paste('median:', as.character(median(obs)/median(df_WC$V1))))
 print(paste('5-year:', as.character(quantile(obs,probs = 1-1/5)/quantile(df_WC$V1,probs = 1-1/5))))
 print(paste('20-year:', as.character(quantile(obs,probs = 1-1/20)/quantile(df_WC$V1,probs = 1-1/20))))
 
+###Highest extreme possible in comparison to observed?
+print(paste('Highest extreme possible in comparison to observed:', as.character(max(extremes_wc)/max(obs))))
 
 EVT_plot <- function(obs=obs,GEV_type) {
   ##Fit GEV to 1) observed 2) raw SEAS5 3) mean bias corrected SEAS5
@@ -124,8 +126,8 @@ p2=EVT_plot(obs=obs,GEV_type = 'Gumbel')
 #type= c("GEV", "GP", "PP", "Gumbel", "Exponential")
 #method= c("MLE", "GMLE", "Bayesian", "Lmoments")
 Obs_GEV_MLE <- fevd(x = obs)
-Obs_GEV_Bayes <- fevd(x = obs,method = "Bayesian")
-Obs_GEV_Bayes <- fevd(x = obs,method = "Lmoments")
+# Obs_GEV_Bayes <- fevd(x = obs,method = "Bayesian")
+# Obs_GEV_Bayes <- fevd(x = obs,method = "Lmoments")
 Obs_Gumbel <- fevd(x = obs,type = 'Gumbel')
 lr.test(Obs_Gumbel,Obs_GEV_MLE)
 SEAS5_GEV <- fevd(x = extremes_wc,type='GEV') #the bias corrected version
@@ -135,12 +137,16 @@ obs_test <- obs
 obs_test['2005'] <- obs['2005']*1.1
 # obs_test['2014'] <- obs['2014']*1.1
 
+
 p3=EVT_plot(obs=obs_test,GEV_type = 'GEV')
 ggarrange(p2, p1,p3,
           labels = c("A", "B","C"),
           ncol = 1, nrow = 3,
-          common.legend = TRUE) %>% 
-  ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )
+          common.legend = TRUE) 
+
+
+#%>% 
+#  ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )
 # ggsave(p2,filename = "../graphs/Fidelity_Gumbel.png")
 # ggsave(p3,filename = "../graphs/Fidelity_obs_adjusted.png")
 p1
@@ -175,7 +181,7 @@ fit <- fevd(extremes, type = GEV_type, location.fun = ~ covariate, ##Fitting the
                scale.fun = ~ covariate)#, use.phi = TRUE)
 params_matrix <- make.qcov(fit, vals = list(mu1 = covariate_values,sigma1 = covariate_values)) #Create a parameter matrix for the GEV fit
 params_matrix['shape'] <- NA
-rvs=ci.fevd(fit,alpha = 0.05,type='return.level',return.period = return_period,method ="normal",qcov=params_matrix)  #Calculate the return values and confidence intervals for each year   
+# rvs=ci.fevd(fit,alpha = 0.05,type='return.level',return.period = return_period,method ="normal",qcov=params_matrix)  #Calculate the return values and confidence intervals for each year   
 
 
 Plot_non_stationary <- function(GEV_type) {
@@ -245,7 +251,7 @@ ggarrange(p_wc, p_sv,
 }
 
 CD=Plot_non_stationary(GEV_type = 'GEV')
-Plot_non_stationary(GEV_type = 'Gumbel')
+# Plot_non_stationary(GEV_type = 'Gumbel')
 
 ```
 
@@ -286,21 +292,22 @@ rvs_SEAS5=ci(SEAS5_GEV_non_stat,alpha = 0.05,type='return.level',return.period =
 rvs_SEAS5_base=ci(SEAS5_GEV_non_stat,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
 rvs_SEAS5_trend_percent=100*rvs_SEAS5/rvs_SEAS5_base[2]
 
-####Normal approximation cannot be good for high return levels -> the distribution is not normal.
+# ####Normal approximation cannot be good for high return levels -> the distribution is not normal.
+# 
+# # #### The profile likelihood should be better, but it is not implemented?
+# # ci.fevd.bayesian(Obs_GEV_non_stat, type = "return.level", method = "proflik",
+# #     xrange = c(3.5,7.75), verbose = TRUE)
+# # data(Fort)
+# 
+# fit <- fevd(Prec, Fort, threshold = 2, type = "GP",
+#     units = "inches", verbose = TRUE)
+# 
+# ci(fit, type = "parameter")
+# ci.fevd.mle(fit, type = "return.level", method = "proflik",
+#     xrange = c(3.5,7.75), verbose = TRUE)
+# 
+# return.level(SEAS5_GEV_non_stat, return.period = 100,do.ci = T, qcov = qcovs[2,], qcov.base = qcovs[1,],method='boot') ##Only normal approximation available
 
-#### The profile likelihood should be better, but it is not implemented?
-ci.fevd.bayesian(Obs_GEV_non_stat, type = "return.level", method = "proflik",
-    xrange = c(3.5,7.75), verbose = TRUE)
-data(Fort)
-
-fit <- fevd(Prec, Fort, threshold = 2, type = "GP",
-    units = "inches", verbose = TRUE)
-
-ci(fit, type = "parameter")
-ci.fevd.mle(fit, type = "return.level", method = "proflik",
-    xrange = c(3.5,7.75), verbose = TRUE)
-
-return.level(SEAS5_GEV_non_stat, return.period = 100,do.ci = T, qcov = qcovs[2,], qcov.base = qcovs[1,],method='boot') ##Only normal approximation available
 
 ###Plotting the uncertainty estimation
 ci_wc=RV_ci(extremes = df_WC$V1,covariate = c(df_WC$Year),return_period = 100,covariate_values = c(1:35),GEV_type='GEV')
@@ -379,10 +386,25 @@ AB=
   ggarrange(AB, CD,
             legend='top',
             common.legend = T,
-            ncol = 1, nrow = 2) %>% 
-    ggsave(filename = "../graphs/Trends2.png")
+            ncol = 1, nrow = 2) #%>% 
+    # ggsave(filename = "../graphs/Trends2.png")
 
 ```
+
+#Calculate the 2015 return period of the 1981 100-year value
+
+```{r}
+##The 100 year value in 1981
+RV_100yr_1981=rvs_SEAS5_SV_base[2]
+###The 30 till 100 year values in 2015
+GEV_2015=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = seq(30,100),method ="normal",qcov=qcovs[2,])  #Calculate the return values and confidence intervals for each 
+GEV_2015[71, 2]/RV_100yr_1981
+##Which in the sequence is closest to the 1981 value?
+which.min(abs(GEV_2015[,2] - RV_100yr_1981)) #The 41-year value!
+
+```
+
+
 #Bootstrap median extremes (2-year events)
 Similar to comparing the distribution of the unseen ensemble to the observations by bootstrapping, here we test whether the observed trend falls within the bootstrapped trends.   
 ```{r}

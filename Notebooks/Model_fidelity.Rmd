@@ -82,13 +82,13 @@ p4_cor=plot_hist(bootstrapped_array_WC_biascor,kurtosis,'Kurtosis','orange')
 
 ggarrange(p1,p2,p3,p4,
           labels = c("A", "B","C","D"),
-          ncol = 2, nrow = 2)%>% 
-  ggsave(filename = "../graphs/Fidelity_UNSEEN.png",width =8,height = 8 )
-
+          ncol = 2, nrow = 2)#%>%
+#   ggsave(filename = "../graphs/Fidelity_UNSEEN.png",width =8,height = 8 )
+# 
 ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
           labels = c("A", "B","C","D"),
-          ncol = 2, nrow = 2)%>% 
-  ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.png",width =8,height = 8 )
+          ncol = 2, nrow = 2)#%>%
+#   ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.png",width =8,height = 8 )
 
 ```
 

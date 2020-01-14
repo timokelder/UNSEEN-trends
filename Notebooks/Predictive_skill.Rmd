@@ -35,26 +35,24 @@ Plot the observations and the forecasts for:
 ```{r fig1, fig.height = 9, fig.width = 5, fig.align = "center"}
 # ggplot()+
 #   geom_line(df=Extremes_WC,aes(x=))
+rank.histogram <- function(pred,obs=NULL) {
+  
+  N <- dim(pred)[2]
+  K <- dim(pred)[1]
+  
+  ranks <- apply(rbind(obs, pred), 2, rank, ties.method="random")[1, ]
+  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5),main=NULL)[["counts"]]
+}
 
-par(mfrow=c(3,1))
-plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON three-day precipitation maxima',xlab = '')
-for (mbr in 1:25){
-  for (ld in 1:4){
-    lines(1981:2015,Extremes_WC[mbr,ld,],col=alpha('blue',0.1))}}
-axis(side = 1,1981:2015,labels = F)
+pred=apply(Extremes_WC,MARGIN = c(1,2) , FUN=calc_anomaly)
 
-
-plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80),ylab = 'Anomalies',xlab = '')
-for (mbr in 1:25){
-  for (ld in 1:4){
-    lines(1981:2015,Extremes_WC[mbr,ld,]-mean(Extremes_WC),col=alpha('blue',0.1))}}
-axis(side = 1,1981:2015,labels = F)
-
-plot(1981:2015,predictand_anomaly,type='l',ylim = c(-2.5,4),ylab='Standardized anomalies',xlab = '')
-for (mbr in 1:25){
-  for (ld in 1:4){
-    lines(1981:2015,calc_anomaly(Extremes_WC[mbr,ld,]),col=alpha('blue',0.1))}}
-axis(side = 1,1981:2015,labels = F)
+rank.histogram3 <- function(pred,obs=NULL) {
+  N <- dim(pred)[1]
+  K <- dim(pred)[2]
+  
+  ranks <- apply(cbind(obs, pred), 1, rank, ties.method="random")[1, ]
+  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5),main=NULL)[["counts"]]
+}
 
 ```
 
@@ -63,31 +61,45 @@ To compare the obervation with the simulations, we show the rank histogram for e
 From both the time series and histogram plots, it is clear that the forecast have a lower bias. When corrected for this mean bias, the ranks of the observations seem to be equally distributed over the forecast ranks.   
 
 ```{r}
-rank.histogram <- function(pred,obs=NULL) {
-  
-  N <- dim(pred)[2]
-  K <- dim(pred)[1]
-  
-  ranks <- apply(rbind(obs, pred), 2, rank, ties.method="random")[1, ]
-  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5))[["counts"]]
-}
+##Plot
+png('../graphs/Rank_hist.png', width = 6, height = 6, units = 'in', res = 300)
+par(mfrow=c(3,2),mar=c(1,4,2,0))
+plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON-3DP events (mm)',xlab = '')
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,Extremes_WC[mbr,ld,],col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
 
-# apply(pred, MARGIN = 3, rank.histogram) #What am I doing wrong?
+par(mar=c(1,6,2,1))
 
 rank1=rank.histogram(rbind(Extremes_WC[,1,],Extremes_WC[,2,],Extremes_WC[,3,],Extremes_WC[,4,]),predictand)
+
+par(mar=c(1,4,2,0))
+
+plot(1981:2015,predictand-mean(predictand),type='l',ylim=c(-60,80),ylab = 'Anomalies (mm)',xlab = '')
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,Extremes_WC[mbr,ld,]-mean(Extremes_WC),col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
+
+
+par(mar=c(1,6,2,1))
+
 rank2=rank.histogram(rbind(Extremes_WC[,1,],Extremes_WC[,2,],Extremes_WC[,3,],Extremes_WC[,4,])-mean(Extremes_WC),predictand-mean(predictand))
 
-pred=apply(Extremes_WC,MARGIN = c(1,2) , FUN=calc_anomaly)
+par(mar=c(2,4,2,0))
 
-rank.histogram <- function(pred,obs=NULL) {
-  N <- dim(pred)[1]
-  K <- dim(pred)[2]
-  
-  ranks <- apply(cbind(obs, pred), 1, rank, ties.method="random")[1, ]
-  rank.hist <- hist(ranks, breaks=seq(-2.5, K+2.5,5))[["counts"]]
-}
-rank3=rank.histogram(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly)
+plot(1981:2015,predictand_anomaly,type='l',ylim = c(-2.5,4),ylab='Standardized anomalies (-)',xlab = '')
+for (mbr in 1:25){
+  for (ld in 1:4){
+    lines(1981:2015,calc_anomaly(Extremes_WC[mbr,ld,]),col=alpha('blue',0.1))}}
+axis(side = 1,1981:2015,labels = F)
 
+par(mar=c(2,6,2,1))
+
+rank3=rank.histogram3(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly)
+
+dev.off()
 ```
 
 ## Predictive skill

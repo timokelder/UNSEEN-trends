@@ -57,18 +57,26 @@ quantile(x,probs=c(0.025,0.975))  ##lower and upper interval
 
 In addition to the cumulative plot, this is a density plot. Without ci.. 
 ```{r}
+#Colorblind friendly palette with grey:
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442","#000000")
+
 p1=ggplot(df_WC, aes(x = V1, colour = Leadtime)) +
+  ggtitle("Norway") +
   labs(x = 'Three-day precipitation (mm)',y = 'Density')+
-  geom_density(alpha = .3)+
+  geom_line(stat='density')+
   theme_classic()+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  scale_colour_manual(values=cbbPalette)
 
 p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
+  ggtitle("Svalbard") +
   labs(x = 'Three-day precipitation (mm)')+
-  geom_density(alpha = .3)+
+  geom_line(stat='density')+
   theme_classic()+
   theme(legend.position = "none",
-      axis.title.y=element_blank())
+      axis.title.y=element_blank())+
+  scale_colour_manual(values=cbbPalette)
+
 
 p1
 p2
@@ -126,6 +134,7 @@ p3=ggplot(df_quantiles_wc)+
   theme_classic()+
   theme(legend.position = "none")+
   scale_fill_manual(name="Pooled data",values=cols) +
+  scale_colour_manual(values=cbbPalette)+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
 
@@ -137,11 +146,13 @@ p4=ggplot(df_quantiles_sv)+
   scale_x_log10(limits=c(NA,875))+
   # scale_x_continuous(trans='log10') +
   scale_fill_manual(name="Pooled data",values=cols) +
+  scale_colour_manual(values=cbbPalette)+
   theme_classic()+
   theme(axis.title.y=element_blank(),
-    legend.position = c(.95, .05),
-    legend.justification = c("right", "bottom"),
-    legend.box.just = "right")+
+    legend.position = "none")+
+    # c(.95, .05),
+    # legend.justification = c("right", "bottom"),
+    # legend.box.just = "right")+
   guides(fill = FALSE)+
   xlab('Return period')+
   ylab('Three-day precipitation (mm)')
@@ -155,11 +166,13 @@ ggarrange(p1, p2, p3,p4,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2)
 
+
 ggarrange(p1, p2, p3,p4, 
         labels = c("A", "B", "C", "D"),
-        hjust = c(-0.5,1,-0.5,0),
-        ncol = 2, nrow = 2) %>% 
- ggsave(filename = "../graphs/Stability.png", width = 8, height = 8)
+        hjust = c(-0.5,1,-0.5,1),
+        ncol = 2, nrow = 2,
+        common.legend = TRUE) %>% 
+ ggsave(filename = "../graphs/Stability.png", width = 6.5, height = 6.5)
 
 
 ```

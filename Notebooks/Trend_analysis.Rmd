@@ -20,10 +20,10 @@ The data for the West coast and Svalbard are loaded.
 # plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/Documents/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
-# dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+dir='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
 
-dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
+# dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
 source('Load_data.R')
 library(extRemes)
 library("ggpubr")

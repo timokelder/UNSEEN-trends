@@ -3,66 +3,87 @@ Model stability
 Timo Kelder
 November 12, 2019
 
-In this notebook, we assess the stability of the model over forecast length. Does the statistical distribution of extreme precipitation increase (or decrease) with longer lead times? We assess the distribution of extreme precipitation between different forecast lead times. A block maxima approach is taken, where the extremes are defined as Autumn three-day maximum precipitation values.
+In this notebook, we assess the stability of the model over forecast
+length. Does the statistical distribution of extreme precipitation
+increase (or decrease) with longer lead times? We assess the
+distribution of extreme precipitation between different forecast lead
+times. The extremes are defined as the maxima three-day precipitation
+values.
 
-Import data and packages
-------------------------
+## Import data and packages
 
 ``` r
-dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-plotdir=paste0(dir,'/statistics/multiday/plots')
-#dir='/home/timok/Documents/ensex'
-#plotdir='/home/timok/Documents/ensex/R/graphs'
+# dir_lustre='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir_lustre=paste0(dir,'/statistics/multiday/plots')
+# dir_Norlaptop='/home/timok/Documents/ensex'
+# plotdir_Norlaptop='/home/timok/Documents/ensex/R/graphs'
+# dir_Perslaptop='C:/Users/Timo/Documents/GitHub/EnsEx/Data'
+# plotdir_Perslaptop='/home/timok/Documents/ensex/R/graphs'
+# dir='/home/timok/Documents/ensex/EnsEx/Data'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
+
 source('Load_data.R')
+library("ggpubr")
 ```
 
-    ## ── Attaching packages ────────────────────────────────── tidyverse 1.2.1 ──
+## Plot empirical cumulative distribution functions for each leadtime
 
-    ## ✔ tibble  2.1.3     ✔ purrr   0.3.3
-    ## ✔ tidyr   1.0.0     ✔ dplyr   0.8.3
-    ## ✔ readr   1.1.1     ✔ stringr 1.3.0
-    ## ✔ tibble  2.1.3     ✔ forcats 0.3.0
-
-    ## ── Conflicts ───────────────────────────────────── tidyverse_conflicts() ──
-    ## ✖ dplyr::arrange()   masks plyr::arrange()
-    ## ✖ purrr::compact()   masks plyr::compact()
-    ## ✖ dplyr::count()     masks plyr::count()
-    ## ✖ dplyr::failwith()  masks plyr::failwith()
-    ## ✖ dplyr::filter()    masks stats::filter()
-    ## ✖ dplyr::id()        masks plyr::id()
-    ## ✖ dplyr::lag()       masks stats::lag()
-    ## ✖ dplyr::mutate()    masks plyr::mutate()
-    ## ✖ dplyr::rename()    masks plyr::rename()
-    ## ✖ dplyr::summarise() masks plyr::summarise()
-    ## ✖ dplyr::summarize() masks plyr::summarize()
-
-Plot empirical cumulative distribution functions for each leadtime
-------------------------------------------------------------------
-
-We show the ecdf for the west coast of Norway and for Svalbard. The lead times seem similar.
+We show the probability density for the west coast of Norway and for
+Svalbard. The lead times seem very similar.
 
 ``` r
+## A list with directories used
+
 require(plyr)
 names(dimnames(Extremes_WC)) <- c('Member', 'Leadtime', 'Year')
 names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
-df_WC=adply(Extremes_WC, 1:3)
+df_WC=adply(Extremes_WC, 1:3) ## Convert the array with extremes to a data frame 
 df_SV=adply(Extremes_SV, 1:3)
-
-ggplot(df_WC, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = NULL, y = 'Precipitation')+
-  theme_classic() 
 ```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
 ``` r
-ggplot(df_SV, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = 'Precipitation')+
-  theme_classic() 
+#Colorblind friendly palette with grey:
+cbbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442","#000000")
+
+p1=ggplot(df_WC, aes(x = V1, colour = Leadtime)) +
+  ggtitle("Norway") +
+  labs(x = 'Three-day precipitation (mm)',y = 'Density')+
+  geom_line(stat='density')+
+  theme_classic()+
+  theme(legend.position = "none")+
+  scale_colour_manual(values=cbbPalette)
+
+p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
+  ggtitle("Svalbard") +
+  labs(x = 'Three-day precipitation (mm)')+
+  geom_line(stat='density')+
+  theme_classic()+
+  theme(legend.position = "none",
+      axis.title.y=element_blank())+
+  scale_colour_manual(values=cbbPalette)
+
+
+p1
 ```
 
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-3-2.png)
+![](Model_stability_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-We would want to proof that they are similar. Therefore, we want to show the confidence interval of the ecdf of all lead times pooled together. The sample size should be the same as the ecdfs for each lead time, so we bootstrap the pooled leadtimes into series with equal length of the single leadtimes, with n=10000.
-I have tried to add these confidence intervals but I dont know whether this is the right way and I dont know how to add these confidence intervals to the ggplot.
+``` r
+p2
+```
+
+![](Model_stability_files/figure-gfm/unnamed-chunk-4-2.png)<!-- -->
+
+``` r
+# ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
+```
+
+We want to show the confidence interval of the distribution of all lead
+times pooled together, and test whether the individual lead times fall
+within these confidence intervals. Therefore we bootstrap the pooled
+leadtimes into series with equal length of the individual leadtimes
+(875), with n=10000.
 
 ``` r
 bootstrapped_series_SV=sample(df_SV$V1,size = 875*10000,replace = T) #bootstraps the series of length equal to each lead time (875) with n= 10.000 
@@ -70,148 +91,133 @@ bootstrapped_series_WC=sample(df_WC$V1,size = 875*10000,replace = T) #Same for W
 bootstrapped_array_SV=array(bootstrapped_series_SV,dim = c(875,10000)) #Creates an array with 10.000 series of 875 values
 bootstrapped_array_WC=array(bootstrapped_series_WC,dim = c(875,10000)) #Creates an array with 10.000 series of 875 values
 
-##Here I dont know how to get the 5 and 95% confidence intervals for the ecdf from the 10.000 series. Now, I calculate the quantiles over the ecdf for each of the series, and then calculate the lower and upper interval for the quantiles over the 10.000 values. 
-ecdf_datavalues <- function(x) { ##write a function to obtain the quantiles for the ecdf distribution  
-  b=ecdf(x)
-  return(quantile(b,probs = seq(0,1,0.01))) #returns the quantiles for the empirical distribution
-}
-
-ecdfs_SV=apply(bootstrapped_array_SV, MARGIN = 2,ecdf_datavalues) #apply the ecdf function to each of the 10.000 series
-ecdfs_WC=apply(bootstrapped_array_WC, MARGIN = 2,ecdf_datavalues) #apply the ecdf function to each of the 10.000 series
-
 CI <- function(x) {
-quantile(x,probs=c(0.05,0.95))  ##lower and upper interval
+quantile(x,probs=c(0.025,0.975))  ##lower and upper interval
 }  
-
-#calculate the lower and upper interval from the 10.000 values for each quantile. 
-ci_WC=apply(ecdfs_WC, MARGIN = 1,CI)
-ci_SV=apply(ecdfs_SV, MARGIN = 1,CI)
-
-#And calculate their ecdfs 
-lower_SV=ecdf(ci_SV[1,])
-upper_SV=ecdf(ci_SV[2,])
-
-
-#It duplicates the confidence interval because it is sorted in color=Leadtime. Tips how to work around this?
-ggplot(df_SV, aes(V1, colour = Leadtime)) + stat_ecdf() +labs(x = NULL, y = 'Precipitation')+ 
-  geom_ribbon(aes(x=df_SV$V1,ymin = lower_SV(df_SV$V1),ymax = upper_SV(df_SV$V1)),alpha = 0.2)+
-  theme_classic()
 ```
 
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-4-1.png)
+We plot the empirical return values of the pooled ensemble including
+confidence intervals. On top, we add the individual lead times.
 
 ``` r
-# ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
+rps=35*25*4/1:(35*25*4) #The return periods for the entire ensemble of 3500 years
+rps_ld = 35*25/1:(35*25) #The return periods for the ensemble split up into 4 leadtimes, 875 years
 
-###I cant do it with ggplot.. Tips? :)
-```
-
-So instead lets try base R..
-
-``` r
-#Try base R
-
-# png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Drift_WC_ecdf.png'),type='cairo')
-par(mar=c(4.5,5.1,2.1,2.1),cex.axis=1.5, cex.lab=1.5,cex.main=1.5)
-
-#Plot the ecdf for the first lead time
-plot(ecdf(as.vector(Extremes_WC[,'2',])), 
-     col=2,
-     xlab="Seasonal maximum daily precipitation (mm)",
-     ylab="Cumulative Proportion",
-     cex=0)
-##Add the other three
-for (ld in 3:5){
-  lines(ecdf(as.vector(Extremes_WC[,as.character(ld),])),col=ld,cex=0)
+empirical_returnvalues <- function(x) { ##write a function to obtain the quantiles for the distribution  
+  return(quantile(x,probs = 1-1/(rps))) #returns the quantiles for the return values = (1-1/return period)
 }
 
-#And add the confidence intervals
-lines(ecdf(ci_WC[1,]), do.points=F,lty=2,col='grey')
-lines(ecdf(ci_WC[2,]), do.points=F,lty = 2,col='grey')
-
-legend('bottomright',
-       legend=as.character(2:5),  # text in the legend
-       col=2:5,  # point colors
-       lty=1,
-       cex=1.3,
-       bg='white')  # specify the point type to be a square
-```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-5-1.png)
-
-``` r
-# dev.off()
-
-#And for Svalbard
-plot(ecdf(as.vector(Extremes_SV[,'2',])),col=2,xlab="Seasonal maximum daily precipitation (mm)",ylab="Cumulative Proportion",cex=0)
-for (ld in 3:5){lines(ecdf(as.vector(Extremes_SV[,as.character(ld),])),col=ld,cex=0)}
-lines(ecdf(ci_SV[1,]), do.points=F,lty=2,col='grey')
-lines(ecdf(ci_SV[2,]), do.points=F,lty = 2,col='grey')
-```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-5-2.png)
-
-In addition to the cumulative plot, this is a density plot. Without ci..
-
-``` r
-ggplot(df_WC, aes(x = V1, fill = Leadtime)) +
-  labs(x = 'Precipitation')+
-  geom_density(alpha = .3)+
-  theme_classic()
-```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-6-1.png)
-
-``` r
-ggplot(df_SV, aes(x = V1, fill = Leadtime)) +
-  labs(x = 'Precipitation')+
-  geom_density(alpha = .3)+
-  theme_classic()
-```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-6-2.png)
-
-``` r
-# ggsave(p2, filename = paste0(dir,"/statistics/multiday/plots/Stability.png"), dpi = 100, type = "cairo")
-```
-
-What about empirical return value plots?
-
-``` r
-rps=35*25*4/1:(35*25*4) #Return periods
-
-empirical_returnvalues <- function(x) { ##write a function to obtain the quantiles for the ecdf distribution  
-  return(quantile(x,probs = 1-1/(rps))) #returns the quantiles for the return values (1-1/return period)
-}
-
-Rvs_WC=apply(bootstrapped_array_WC, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
-Rvs_SV=apply(bootstrapped_array_SV, MARGIN = 2,empirical_returnvalues) #apply the ecdf function to each of the 10.000 series
+Rvs_WC=apply(bootstrapped_array_WC, MARGIN = 2,empirical_returnvalues) #apply the function to each of the 10.000 series
+Rvs_SV=apply(bootstrapped_array_SV, MARGIN = 2,empirical_returnvalues) #Same for Svalbard
 
 #calculate the lower and upper interval from the 10.000 values for each quantile. 
 ci_rvs_WC=apply(Rvs_WC, MARGIN = 1,CI)
 ci_rvs_SV=apply(Rvs_SV, MARGIN = 1,CI)
-
 # png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Stability_rv.png'),type='cairo')
 
-##plot for WC
-plot(rps,quantile(Extremes_WC,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
-     xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
-for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_WC[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
+##Create a dataframe including the return peridos, empirical values and confidence intervals
+df_quantiles_wc <-df_WC %>% 
+  mutate(rps_all=rps,quantiles_all=quantile(V1,1-1/(rps)))
 
-polygon(c(rps, rev(rps)), c(ci_rvs_WC[2,], rev(ci_rvs_WC[1,])),col = rgb(0,0,0,alpha = 0.3), border = NA)
+df_quantiles_wc <- df_quantiles_wc %>% 
+  group_by(Leadtime) %>% 
+  mutate(rps_ld=rps_ld,quantiles_ld=quantile(V1,1-1/(rps_ld)))
+
+df_quantiles_wc$ci_2.5 <- ci_rvs_WC[1,]
+df_quantiles_wc$ci_97.5 <- ci_rvs_WC[2,]
+
+##Same for Svalbard
+df_quantiles_sv <-df_SV %>% 
+  mutate(rps_all=rps,quantiles_all=quantile(V1,1-1/(rps)))
+
+df_quantiles_sv <- df_quantiles_sv %>% 
+  group_by(Leadtime) %>% 
+  mutate(rps_ld=rps_ld,quantiles_ld=quantile(V1,1-1/(rps_ld)))
+
+df_quantiles_sv$ci_2.5 <- ci_rvs_SV[1,]
+df_quantiles_sv$ci_97.5 <- ci_rvs_SV[2,]
 ```
-
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 ``` r
-# dev.off()
+#And plot!
+cols=c("95 % CI"="black")
+p3=ggplot(df_quantiles_wc)+
+  geom_line(aes(x=rps_all,y=quantiles_all))+
+  geom_line(aes(x=rps_ld,y=quantiles_ld,col=Leadtime))+
+  geom_ribbon(aes(x=rps_all,ymin=ci_2.5,ymax=ci_97.5,fill="95 % CI"),alpha=0.1)+
+  # xlim(NA,875)+
+  scale_x_log10(limits=c(NA,875))+
+  # scale_x_continuous(trans='log10') +
+  theme_classic()+
+  theme(legend.position = "none")+
+  scale_fill_manual(name="Pooled data",values=cols) +
+  scale_colour_manual(values=cbbPalette)+
+  xlab('Return period')+
+  ylab('Three-day precipitation (mm)')
 
-#and for Svalbard
-plot(rps,quantile(Extremes_SV,1-1/(rps),type=7),type='l',xlim = c(2,875),ylab='SEAS5 precipitation (mm/ 3 days)',
-     xlab = paste0('Return period (35 yrs * 25 ens)'),log = 'x')
-for (i in 2:5){lines(35*25/1:(35*25),quantile(Extremes_SV[,as.character(i),],1-1/(35*25/1:(35*25)),type=7),col=i)}
+p4=ggplot(df_quantiles_sv)+
+  geom_line(aes(x=rps_all,y=quantiles_all))+
+  geom_line(aes(x=rps_ld,y=quantiles_ld,col=Leadtime))+
+  geom_ribbon(aes(x=rps_all,ymin=ci_2.5,ymax=ci_97.5,fill="95 % CI"),alpha=0.1)+
+  # xlim(NA,875)+
+  scale_x_log10(limits=c(NA,875))+
+  # scale_x_continuous(trans='log10') +
+  scale_fill_manual(name="Pooled data",values=cols) +
+  scale_colour_manual(values=cbbPalette)+
+  theme_classic()+
+  theme(axis.title.y=element_blank(),
+    legend.position = "none")+
+    # c(.95, .05),
+    # legend.justification = c("right", "bottom"),
+    # legend.box.just = "right")+
+  guides(fill = FALSE)+
+  xlab('Return period')+
+  ylab('Three-day precipitation (mm)')
 
-polygon(c(rps, rev(rps)), c(ci_rvs_SV[2,], rev(ci_rvs_SV[1,])),col = rgb(0,0,0,alpha = 0.3), border = NA)
+p3
 ```
 
-![](Model_stability_files/figure-markdown_github/unnamed-chunk-7-2.png)
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+
+![](Model_stability_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+p4
+```
+
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+
+![](Model_stability_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+And then combined
+
+``` r
+#Combine the plots
+ggarrange(p1, p2, p3,p4, 
+          labels = c("A", "B", "C", "D"),
+          ncol = 2, nrow = 2)
+```
+
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+    
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+
+![](Model_stability_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+ggarrange(p1, p2, p3,p4, 
+        labels = c("A", "B", "C", "D"),
+        hjust = c(-0.5,1,-0.5,1),
+        ncol = 2, nrow = 2,
+        common.legend = TRUE) #%>% 
+```
+
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+    
+    ## Warning: Removed 3 rows containing missing values (geom_path).
+
+![](Model_stability_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+
+``` r
+ # ggsave(filename = "../graphs/Stability.png", width = 6.5, height = 6.5)
+```

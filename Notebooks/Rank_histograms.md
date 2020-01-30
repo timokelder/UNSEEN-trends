@@ -1,4 +1,4 @@
-Predictive skill
+Rank histograms
 ================
 Timo Kelder
 October 19, 2019
@@ -37,7 +37,7 @@ source('Load_data.R')
     ## x dplyr::summarise() masks plyr::summarise()
     ## x dplyr::summarize() masks plyr::summarize()
 
-\#\#SEAS5 compared to SeNorge
+## SEAS5 compared to SeNorge
 
 Plot the observations and the forecasts for:
 
@@ -120,7 +120,7 @@ par(mar=c(2,6,2,1))
 rank3=rank.histogram3(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly)
 ```
 
-![](Predictive_skill_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+![](Rank_histograms_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
 # dev.off()

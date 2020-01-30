@@ -9,7 +9,7 @@ output: github_document
 Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"
 ```
 
-In this notebook, we will first show the forecasts of the Norwegian West Coast compared to observed values and then we will assess the skill of the forecasts. 
+In this notebook, we show the forecasts of the Norwegian West Coast compared to observed values. 
 
 ## Import data and packages
 
@@ -19,7 +19,6 @@ In this notebook, we will first show the forecasts of the Norwegian West Coast c
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
 dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
-require(ggpubr)
 source('Load_data.R')
 ```
 
@@ -28,13 +27,12 @@ source('Load_data.R')
 Plot the observations and the forecasts for: 
 
 - The raw values for the observations and the forecasts
-- The mean bias corrected forecasts
-- The standardized anomaly for the forecasts and the observations 
+- The anomalies
+- The standardized anomalies 
 
-
+First, we define some functions
 ```{r fig1, fig.height = 9, fig.width = 5, fig.align = "center"}
-# ggplot()+
-#   geom_line(df=Extremes_WC,aes(x=))
+
 rank.histogram <- function(pred,obs=NULL) {
   
   N <- dim(pred)[2]
@@ -62,7 +60,7 @@ From both the time series and histogram plots, it is clear that the forecast hav
 
 ```{r}
 ##Plot
-png('../graphs/Rank_hist.png', width = 6, height = 6, units = 'in', res = 300)
+# png('../graphs/Rank_hist.png', width = 6, height = 6, units = 'in', res = 300)
 par(mfrow=c(3,2),mar=c(1,4,2,0))
 plot(1981:2015,predictand,type='l',ylim=c(0,175), ylab = 'SON-3DP events (mm)',xlab = '')
 for (mbr in 1:25){
@@ -99,211 +97,7 @@ par(mar=c(2,6,2,1))
 
 rank3=rank.histogram3(cbind(pred[,,1],pred[,,2],pred[,,3],pred[,,4]),predictand_anomaly)
 
-dev.off()
-```
-
-## Predictive skill
-Then, for the predictive skill, the mean of the forecasts for each leadtime is used for the raw and standardized data.
-
-```{r}
-plot(1981:2015,predictand,type='l')
-lines(1981:2015,predictor_all,col='orange')
-lines(1981:2015,predictor['2',],col='blue')
-lines(1981:2015,predictor['3',],col='blue')
-lines(1981:2015,predictor['4',],col='blue')
-lines(1981:2015,predictor['5',],col='blue')
-
-plot(1981:2015,predictand_anomaly,type='l')
-lines(1981:2015,predictor_anomaly_all,col='orange')
-lines(1981:2015,predictor_anomaly[,'2'],col='blue')
-lines(1981:2015,predictor_anomaly[,'3'],col='blue')
-lines(1981:2015,predictor_anomaly[,'4'],col='blue')
-lines(1981:2015,predictor_anomaly[,'5'],col='blue')
-```
-
-We compare the anomaly of the observations with forecasts for each of the lead times. There is not much of a correlation and the lead times are not significantly different.  
-```{r}
-
-df <- data.frame(predictand_anomaly,predictor_anomaly) %>%
-  # select(predictand_anomaly, X2,X3,X4,X5) %>%
-  gather(key = "variable", value = "value", -predictand_anomaly)
-df_all <- data.frame(predictand_anomaly,predictor_anomaly_all)
-
-ggplot() +
-  geom_point(data=df, aes(x=predictand_anomaly, y=value, color=variable, shape=variable)) +
-  geom_smooth(method=lm,data=df, aes(x=predictand_anomaly, y=value, color=variable,fill=variable))+
-  geom_point(data=df_all, aes(x=predictand_anomaly, y=predictor_anomaly_all), color='black') + 
-  geom_smooth(method=lm,data=df_all, aes(x=predictand_anomaly, y=predictor_anomaly_all), color='black')+
-  xlim(-2.5, 2.5) +
-  ylim(-2.5, 2.5) +
-  theme_classic() 
-
-
-
-```
-
-
-We calculate the correlation test between the anomalies of the ensemble mean of each lead time and the observations
-
-```{r}
-#Use spearman to avoid normality assumptions
-cor_coeff='spearman'
-correlation_test <- function(predictor_anomaly) {
-  
-correlation=cor.test(predictand_anomaly,predictor_anomaly,alternative = 'two.sided',method = cor_coeff) #alternative hypothesis is that the population correlation is greater than 0. -> we don't expect negative correlations? 
-return(c(correlation$estimate,correlation$p.value))}# 
-apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
-print('For the pooled leadtimes')
-correlation_test(predictor_anomaly = predictor_anomaly_all)
-
-```
-
-The correlations are very small. Does it even make sense to continue and calculate the ratio of predictable components? I don't think so. The main question I have is: Do we trust the trends in the anomalies of the model to be representative of trends in reality (the anomalies of the observations), even if there is no skill? See the forecast reliability notebook. 
-
-
-A little extra: What about the correlation between the different leadtimes? They also have very small correlations
-
-```{r}
-predictand_anomaly=predictor_anomaly[,'2']
-apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
-predictand_anomaly=predictor_anomaly[,'3']
-apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
-predictand_anomaly=predictor_anomaly[,'4']
-apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
-predictand_anomaly=predictor_anomaly[,'5']
-apply(predictor_anomaly,MARGIN = 2 , FUN=correlation_test)
-
-
-```
-
-##The ration of predictable components (RPC).
-This can be calculated in two ways: 1) the variation of the mean compared to the variation of single members and 2) the RMSE compared to the variation.
-
-```{r}
-
-#### Spread about ensemble mean
-Calculate_spread_RMSE <- function(Extremes) {
-  sd_ensemble_about_mean_ld=apply(Extremes,MARGIN = c(2,3),FUN=sd) #Standard deviation for each year and each leadtime
-  sd_ensemble_about_mean=apply(Extremes,MARGIN = c(3),FUN=sd) #Standard deviation for each year
-  spread_ld=apply(sd_ensemble_about_mean_ld,MARGIN = 1,mean)
-  spread=mean(sd_ensemble_about_mean)
-  
-  
-  ###RMSE ensemble mean
-  ens_mean=apply(Extremes,MARGIN = c(3),FUN=mean) #mean over lead times and members
-  ens_lds=Extremes
-  ens_RMSE_years_ld = matrix(nrow = 25,ncol=4)
-  ens_RMSE_years=c()
-  for (i in 1:25){
-    SE=(ens_lds[,,i]-ens_mean[i])^2 ##Squared error per leadtime. We follow Weisheimer, (2018), where the verifying ensemble member is included in the ensemble mean https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.3446
-    ens_RMSE_years_ld[i,]=sqrt(apply(SE,MARGIN = 2,mean)) #Root mean squared error per leadtime per year
-    ens_RMSE_years=c(ens_RMSE_years,sqrt(mean(SE)))
-    }
-  
-  ens_mean_RMSE_lds=apply(ens_RMSE_years_ld,MARGIN=2,mean)# Mean Root mean squared error over year per leadtime
-  ens_mean_RMSE=mean(ens_RMSE_years)# Mean Root mean squared error over year 
-  
-  #the spread/RMSE for the pooled ensemble = 1.01!!!
-  # When the RMSE is larger than the spread,the forecasting system is under‐dispersive (overconfident)and does not produce enough ensemble spread to balance the forecast errors. This is usually found for seasonal prediction systems (especially over the tropics).
-  
-  ##Show the spread and RMSE per leadtime
-  df_spread = data.frame('Value'=spread_ld,type='Spread', Leadtime=names(spread_ld))
-  df_RMSE= data.frame('Value'=ens_mean_RMSE_lds,type='RMSE', Leadtime=names(spread_ld))
-  df=rbind(df_spread,df_RMSE)
-  return(list(df, spread,ens_mean_RMSE,spread_ld,ens_mean_RMSE_lds))
-}
-
-list_wc=Calculate_spread_RMSE(Extremes_WC)
-df_wc=list_wc[[1]]
-spread_wc<-list_wc[[2]]
-ens_mean_RMSE_wc<-list_wc[[3]]
-spread_ld_wc<-list_wc[[4]]
-ens_mean_RMSE_lds_wc <-list_wc[[5]]
-
-list_sv=Calculate_spread_RMSE(Extremes_SV)
-df_sv=list_sv[[1]]
-spread_sv<-list_sv[[2]]
-ens_mean_RMSE_sv<-list_sv[[3]]
-spread_ld_sv<-list_sv[[4]]
-ens_mean_RMSE_lds_sv <-list_sv[[5]]
-
-
-Spread_RMSE_line_wc=
-  ggplot() +
-  geom_line(data=df_wc, aes(x=Leadtime, y=Value,col=type, group=type))+
-  ylim(0,20)+
-  # scale_fill_manual(values=c('red','grey'))+
-  theme_classic()+
-    theme(legend.position = 'none')
-
-Spread_RMSE_line_sv=
-  ggplot() +
-  geom_line(data=df_sv, aes(x=Leadtime, y=Value,col=type, group=type))+
-  ylim(0,5)+
-  # scale_fill_manual(values=c('red','grey'))+
-  theme_classic()+
-    theme(legend.position = c(.95, .4),
-    legend.justification = c("right", "bottom"),
-    legend.box.just = "right",
-    legend.title = element_blank())
-
-# p <- plot_grid(Spread_RMSE_line_wc,Spread_RMSE_line_sv, labels = "AUTO")
-# save_plot("../graphs/Spread.RMSE.pdf", p, ncol = 2,base_height = 3.71,
-#   base_asp = 1.618,fontsize=14)
-
-ggarrange(Spread_RMSE_line_wc,Spread_RMSE_line_sv,
-          labels = c("A", "B")) %>%
-   ggsave(filename = "../graphs/Spread.RMSE.png", width = 8, height = 4)
-
-#And calculate the spread/RMSE per leadtime
-spread_wc/ens_mean_RMSE_wc
-spread_ld_wc/ens_mean_RMSE_lds_wc
-
-spread_sv/ens_mean_RMSE_sv
-spread_ld_sv/ens_mean_RMSE_lds_sv
-```
-
-
-
-
-
-
-
-```{r}
-
-
-ggplot() +
-  geom_bar(data=df_wc, aes(x=Leadtime, y=Value,fill=type),stat="identity", position=position_dodge())+
-  scale_fill_manual(values=c('red','grey'))+
-  theme_classic()
-
-# plot(spread_ld,ylim=(c(0,20)),col='red', type='o')
-# points(1:4,ens_mean_RMSE_lds, type='o')
-
-
-
-```
-
-
-```{r}
-##############older stuff
-Var_signal=sd(predictor_all)^2 #The signal is the interannual variance of the model mean
-Var_signal_obs=sd(obs)^2 #The signal is the interannual variance of the model mean
-
-# sd_ensemble=apply(Extremes_WC,MARGIN = c(1,2),FUN=sd) #The standard deviation for each ensemble member and lead time
-sd_ensemble=apply(Extremes_WC,MARGIN = c(3),FUN=sd) #The standard deviation for each ensemble member and lead time
-Var_noise=mean(sd_ensemble)^2 #The noise is the variance of the individual ensemble members about the ensemble mean
-Var_noise_obs=sd(obs)^2 #The noise is the variance of the individual ensemble members about the ensemble mean
-
-PC_mod=sqrt(Var_signal/(Var_signal+Var_noise))# Intrinsic model predictability of the signal = square root of (Var signal/Var total) 
-
-correlation=cor.test(predictand,predictor_all,alternative = 'two.sided',method = 'pearson') #The correlation between the ensemble mean and the observed
-PC_reality=correlation$estimate #the predictability of the model 
-RPC1= PC_reality/PC_mod #The ratio of predictable components is the ratio between the predictability in reality and the predictability of the model
-
-### RMSE of forecast mean to observed
-RMSE = sqrt(mean((predictor_all - predictand)^2))
-RMSE_biascor = sqrt(mean((predictor_all*(mean(predictand)/mean(predictor)) - predictand)^2))
+# dev.off()
 ```
 
 

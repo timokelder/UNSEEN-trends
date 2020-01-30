@@ -1,19 +1,16 @@
----
-title: "Model Fidelity"
-author: "Timo Kelder"
-date: "October 19, 2019"
-output: github_document 
----
+Model Fidelity
+================
+Timo Kelder
+October 19, 2019
 
-```{r eval=FALSE, include=FALSE}
-Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"
-```
-
-In this notebook, we assess the model fidelity of the SEAS5 UNSEEN ensemble over the Norwegian West Coast compared to observed values. We start by bootstrapping  the ensemble and then compare the extreme value distributions for both. For specifics, please see the paper.
+In this notebook, we assess the model fidelity of the SEAS5 UNSEEN
+ensemble over the Norwegian West Coast compared to observed values. We
+start by bootstrapping the ensemble and then compare the extreme value
+distributions for both. For specifics, please see the paper.
 
 ## Import data and packages
 
-```{r}
+``` r
 # dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
 # plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/ensex'
@@ -21,41 +18,106 @@ In this notebook, we assess the model fidelity of the SEAS5 UNSEEN ensemble over
 dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
 
 source('Load_data.R')
+```
+
+    ## -- Attaching packages -------------------------------------------------------------------------------- tidyverse 1.3.0 --
+
+    ## v tibble  2.1.3     v dplyr   0.8.3
+    ## v tidyr   1.0.0     v stringr 1.4.0
+    ## v readr   1.3.1     v forcats 0.4.0
+    ## v purrr   0.3.3
+
+    ## -- Conflicts ----------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## x dplyr::arrange()   masks plyr::arrange()
+    ## x purrr::compact()   masks plyr::compact()
+    ## x dplyr::count()     masks plyr::count()
+    ## x dplyr::failwith()  masks plyr::failwith()
+    ## x dplyr::filter()    masks stats::filter()
+    ## x dplyr::id()        masks plyr::id()
+    ## x dplyr::lag()       masks stats::lag()
+    ## x dplyr::mutate()    masks plyr::mutate()
+    ## x dplyr::rename()    masks plyr::rename()
+    ## x dplyr::summarise() masks plyr::summarise()
+    ## x dplyr::summarize() masks plyr::summarize()
+
+``` r
 library(moments)
 library(extRemes)
+```
+
+    ## Loading required package: Lmoments
+
+    ## Loading required package: distillery
+
+    ## 
+    ## Attaching package: 'distillery'
+
+    ## The following object is masked from 'package:plyr':
+    ## 
+    ##     is.formula
+
+    ## 
+    ## Attaching package: 'extRemes'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     qqnorm, qqplot
+
+``` r
 library("ggpubr")
 ```
 
+    ## Loading required package: magrittr
 
+    ## 
+    ## Attaching package: 'magrittr'
 
-```{r}
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     set_names
+
+    ## The following object is masked from 'package:tidyr':
+    ## 
+    ##     extract
+
+    ## 
+    ## Attaching package: 'ggpubr'
+
+    ## The following object is masked from 'package:plyr':
+    ## 
+    ##     mutate
+
+``` r
 require(plyr)
 names(dimnames(Extremes_WC)) <- c('Member', 'Leadtime', 'Year')
 names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
 df_WC=adply(Extremes_WC, 1:3) ## Convert the array with extremes to a data frame 
 df_SV=adply(Extremes_SV, 1:3)
 obs=Extremes_obs[as.character(1981:2015)]
-
 ```
-
 
 ## Bootstrapping
-From the [rank histograms](Rank_histograms.md), we've learned that the raw forecast have a low bias.  The anomalies show a flat rank histogram, and therefore we select the mean bias correction as fixed value to correct all values within the ensemble. This avoids extrapolation beyond the quantile range. We show the sensitivity to using different quantiles for this correction. 
-```{r echo=FALSE}
-extremes_wc_biascor= df_WC$V1 * mean(obs)/mean(df_WC$V1) ## we create a mean bias corrected series  
 
-# extremes_wc= df_WC$V1 * mean(obs)/mean(df_WC$V1) ## we create a mean bias corrected series  
-print(paste('We use the mean correction factor:', as.character(mean(obs)/mean(df_WC$V1))))
-print(paste('median:', as.character(median(obs)/median(df_WC$V1))))
-print(paste('5-year:', as.character(quantile(obs,probs = 1-1/5)/quantile(df_WC$V1,probs = 1-1/5))))
-print(paste('20-year:', as.character(quantile(obs,probs = 1-1/20)/quantile(df_WC$V1,probs = 1-1/20))))
-```
+From the [rank histograms](Rank_histograms.md), we’ve learned that the
+raw forecast have a low bias. The anomalies show a flat rank histogram,
+and therefore we select the mean bias correction as fixed value to
+correct all values within the ensemble. This avoids extrapolation beyond
+the quantile range. We show the sensitivity to using different quantiles
+for this correction.
 
-We then bootstrap the SEAS5-100 raw ensemble and the bias corrected SEAS5 UNSEEN ensemble into timeseries of 35 years and compare the Mean, Standard Deviation, skewness and kurtosis to the observed value. 
+    ## [1] "We use the mean correction factor: 1.74074291686747"
 
+    ## [1] "median: 1.72164167350046"
 
-```{r}
+    ## [1] "5-year: 1.69100514636314"
 
+    ## [1] "20-year: 1.70424526002514"
+
+We then bootstrap the SEAS5-100 raw ensemble and the bias corrected
+SEAS5 UNSEEN ensemble into timeseries of 35 years and compare the Mean,
+Standard Deviation, skewness and kurtosis to the observed value.
+
+``` r
 #Bootstraps the series to 35 years length with n= 10.000 
 bootstrapped_series_WC=sample(df_WC$V1,size = 35*10000,replace = T) #For WC
 bootstrapped_series_WC_biascor=sample(extremes_wc_biascor,size = 35*10000,replace = T) #For WC
@@ -89,24 +151,38 @@ p4_cor=plot_hist(bootstrapped_array_WC_biascor,kurtosis,'Kurtosis','orange',unit
 ggarrange(p1,p2,p3,p4,
           labels = c("a", "b","c","d"),
           ncol = 2, nrow = 2)#%>%
+```
+
+![](Model_fidelity_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
     #ggsave(filename = "../graphs/Fidelity_UNSEEN.pdf",width =180,height = 180, units='mm',dpi=300)
 # 
 ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
           labels = c("a", "b","c","d"),
           ncol = 2, nrow = 2)#%>%
-   # ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.pdf",width =180,height = 180, units='mm',dpi=300)
-
 ```
 
+![](Model_fidelity_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
+
+``` r
+   # ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.pdf",width =180,height = 180, units='mm',dpi=300)
+```
 
 ### Return value comparison
-We fit the GEV distribution to the simulated and to the observed data. The parameters of the distribution are the location (mean), scale (variation) and shape (shape of the distribution).  
 
-```{r}
+We fit the GEV distribution to the simulated and to the observed data.
+The parameters of the distribution are the location (mean), scale
+(variation) and shape (shape of the distribution).
 
+``` r
 ###Highest extreme possible in comparison to observed?
 print(paste('Highest extreme possible in comparison to observed:', as.character(max(extremes_wc_biascor)/max(obs))))
+```
 
+    ## [1] "Highest extreme possible in comparison to observed: 1.5090235370347"
+
+``` r
 EVT_plot <- function(obs=obs,GEV_type) {
   ##Fit GEV to 1) observed 2) raw SEAS5 3) mean bias corrected SEAS5
   fit_obs <- fevd(x = obs, threshold = NULL, threshold.fun = ~1, location.fun = ~1,
@@ -147,13 +223,13 @@ EVT_plot <- function(obs=obs,GEV_type) {
   datapoints_S5=data.frame(cbind(rp_S5,S5_raw_sorted,S5_corrected_sorted,obs_sorted))
   
   ##And plot
-  cols=c("SEAS5-100"="black","SEAS5 UNSEEN ensemble"="orange","Observations"="blue") ##for  the legend
+  cols=c("SEAS5"="black","SEAS5 mean bias corrected"="orange","Observations"="blue") ##for  the legend
   p1=ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
     geom_line(aes(y = S5),col='black')+
-    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5-100"),alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5"),alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_raw_sorted),col='black',size=1)+
     geom_line(aes(y = S5_corrected),col='orange')+
-    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 UNSEEN ensemble'), alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 mean bias corrected'), alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_corrected_sorted),col='orange',size=1)+
     geom_line(aes(y = Obs),col='blue')+
     geom_ribbon(aes(ymin=Obs_l,ymax=Obs_h,fill='Observations'), alpha=0.3)+
@@ -176,11 +252,11 @@ EVT_plot <- function(obs=obs,GEV_type) {
 p1=EVT_plot(obs=obs,GEV_type = 'GEV')
 # ggsave(p1,filename = "../graphs/Fidelity_EVT.png")#,width =180,height = 180, units='mm',dpi=300)
 p1
-
-
 ```
 
-```{r fig.height=12, fig.width=8}
+![](Model_fidelity_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 p2=EVT_plot(obs=obs,GEV_type = 'Gumbel')
 
 obs_test <- obs
@@ -193,8 +269,12 @@ ggarrange(p2, p1,p3,
           labels = c("a", "b","c"),
           ncol = 1, nrow = 3,
           common.legend = TRUE) #%>%
+```
+
+![](Model_fidelity_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
 # ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )
 # ggsave(p2,filename = "../graphs/Fidelity_Gumbel.png")
 # ggsave(p3,filename = "../graphs/Fidelity_obs_adjusted.png")
-
 ```

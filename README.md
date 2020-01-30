@@ -1,5 +1,5 @@
 # UNSEEN-Trends
-In this repo, we provide code for the paper UNSEEN-trends: Towards detection of changes in 100-year precipitation events over the last 35 years.
+In this repository, we provide code for the paper UNSEEN-trends: Towards detection of changes in 100-year precipitation events over the last 35 years.
 
 
 ## Short intro

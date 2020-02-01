@@ -172,14 +172,10 @@ p3
 p4
 ```
 
-And then combined
+## And then combine the plots for publication
 
 ```{r fig.height=6.5, fig.width=6.5}
 #Combine the plots
-ggarrange(p1, p2, p3,p4, 
-          labels = c("A", "B", "C", "D"),
-          ncol = 2, nrow = 2)
-
 
 ggarrange(p1, p2, p3,p4, 
         labels = c("a", "b", "c", "d"),

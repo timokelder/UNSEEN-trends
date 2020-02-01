@@ -9,7 +9,7 @@ output: github_document
 Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"  ##Note to self
 ```
 
-In this notebook, we will first show the forecasts of the Norwegian West Coast compared to observed values and then we will assess the skill of the forecasts. 
+In this notebook, we will test the independence of the UNSEEN ensembles for Norway and for Svalbard. 
 
 ## Import data and packages
 
@@ -27,6 +27,7 @@ source('Load_data.R')
 
 ##Indepence testing between the first en second member
 
+While the day-to-day variability of the SON-3DP forecasts might not correlate over the season, the maximum seasonal SON-3DP events might. Thus, we test the independence of the SON-3DP ensemble member forecasts by first selecting the seasonal maximum event for each forecast and concatenate these events to create a 35-year timeseries (we refer to Fig. 1a,b,c in the paper). This process is performed on the cluster of MetNor [generating the UNSEEN ensemble](Mining/Mine_regional_average.sh).  by first selecting the seasonal maximum event for each forecast and concatenate these events to create a 35-year timeseries (Fig. 1a,b,c). To robustly assess the independence between each of the ensemble members, we calculate the Spearman rank correlation coefficient (ρ) for every pair of ensemble members (Fig. 1d), resulting in 300 ρ values for each lead time. 
 ```{r}
 ## 
 Extremes_array= Extremes_WC# Select the domain average precipitation extremes for Svalbard 
@@ -93,7 +94,7 @@ Axis(side=1,at=1:5,labels = c(as.character(2:5),'all'))
 #Bootstrap test
 To test whether the correlations are significant, we perform a bootstrap test. 
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 
   Bootstrap <- function(Extremes_array) {
     
@@ -132,7 +133,7 @@ CI_bounds_boxplots=apply(correlations_lds_bootstrapped[,,], MARGIN = 1,Quantiles
 # dev.off()
 ```
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 ##And plot
 par(mar=c(4.5,5.1,2.1,2.1),cex.axis=1.5, cex.lab=1.5,cex.main=1.5)
 boxplot(list(correlations_lds[,,'2'],correlations_lds[,,'3'],correlations_lds[,,'4'],correlations_lds[,,'5']),

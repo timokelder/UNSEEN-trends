@@ -194,22 +194,11 @@ p4
 
 ![](Model_stability_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
-And then combined
+## And then combine the plots for publication
 
 ``` r
 #Combine the plots
-ggarrange(p1, p2, p3,p4, 
-          labels = c("A", "B", "C", "D"),
-          ncol = 2, nrow = 2)
-```
 
-    ## Warning: Removed 3 rows containing missing values (geom_path).
-    
-    ## Warning: Removed 3 rows containing missing values (geom_path).
-
-![](Model_stability_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
-
-``` r
 ggarrange(p1, p2, p3,p4, 
         labels = c("a", "b", "c", "d"),
         hjust = c(-0.5,1,-0.5,1),
@@ -221,7 +210,7 @@ ggarrange(p1, p2, p3,p4,
     
     ## Warning: Removed 3 rows containing missing values (geom_path).
 
-![](Model_stability_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](Model_stability_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
   #ggsave(filename = "../graphs/Stability.png", width = 180, height = 180, units='mm')

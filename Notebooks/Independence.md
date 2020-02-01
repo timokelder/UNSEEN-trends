@@ -3,9 +3,8 @@ Independence test
 Timo Kelder
 October 19, 2019
 
-In this notebook, we will first show the forecasts of the Norwegian West
-Coast compared to observed values and then we will assess the skill of
-the forecasts.
+In this notebook, we will test the independence of the UNSEEN ensembles
+for Norway and for Svalbard.
 
 ## Import data and packages
 
@@ -42,6 +41,20 @@ source('Load_data.R')
     ## x dplyr::summarize() masks plyr::summarize()
 
 \#\#Indepence testing between the first en second member
+
+While the day-to-day variability of the SON-3DP forecasts might not
+correlate over the season, the maximum seasonal SON-3DP events might.
+Thus, we test the independence of the SON-3DP ensemble member forecasts
+by first selecting the seasonal maximum event for each forecast and
+concatenate these events to create a 35-year timeseries (we refer to
+Fig. 1a,b,c in the paper). This process is performed on the cluster of
+MetNor [generating the UNSEEN
+ensemble](Mining/Mine_regional_average.sh). by first selecting the
+seasonal maximum event for each forecast and concatenate these events to
+create a 35-year timeseries (Fig. 1a,b,c). To robustly assess the
+independence between each of the ensemble members, we calculate the
+Spearman rank correlation coefficient (ρ) for every pair of ensemble
+members (Fig. 1d), resulting in 300 ρ values for each lead time.
 
 ``` r
 ## 
@@ -115,58 +128,3 @@ Axis(side=1,at=1:5,labels = c(as.character(2:5),'all'))
 
 \#Bootstrap test To test whether the correlations are significant, we
 perform a bootstrap test.
-
-``` r
-  Bootstrap <- function(Extremes_array) {
-    
-    Extremes_resampled=sample(x=Extremes_array, size=3500, replace = FALSE) #First, resample to make the data uncorrelated
-    Extremes_array_resampled=array(Extremes_resampled,dim = c(25,4,35),dimnames = list(as.character(0:24),as.character(2:5),as.character(1981:2015))) ## rename it 
-    
-    correlations_lds_resampled=array(dim = c(25,25,4),dimnames = list(as.character(0:24),as.character(0:24),as.character(2:5))) #lds, mbmrs
-    for (ld in 2:5){
-      for (mbr1 in 1:25){
-        for (mbr2 in 1:25){
-          
-          if (mbr1>mbr2){
-            predictant=as.vector(Extremes_array_resampled[mbr1,as.character(ld),])
-            predictor=as.vector(Extremes_array_resampled[mbr2,as.character(ld),])
-            # predictor=as.vector(apply(Extremes_array[-mbr,as.character(ld),],FUN = mean , MARGIN=c(2)))
-            
-            predictant_anomaly=(predictant-mean(predictant))/sd(predictant)
-            predictor_anomaly=(predictor-mean(predictor))/sd(predictor)
-            
-            correlations_lds_resampled[mbr1,mbr2,as.character(ld)]=cor(predictant_anomaly,predictor_anomaly,method = cor_coeff)
-          }
-        }
-      }
-    }
-    a=boxplot(list(correlations_lds_resampled[,,'2'],correlations_lds_resampled[,,'3'],correlations_lds_resampled[,,'4'], correlations_lds_resampled[,,'5']), plot = F)
-           return(a$stats)
-  }
-  
-correlations_lds_bootstrapped=replicate(1000,Bootstrap(Extremes_array))
-
-Quantiles=c(0.025,0.975)
-Quantiles_fun <- function(x) {quantile(x,Quantiles,na.rm=T)}
-CI_bounds_boxplots=apply(correlations_lds_bootstrapped[,,], MARGIN = 1,Quantiles_fun ) #We resample 1000 times for 4 leadtimes. Resulting in 4000 quantiles based on 300 pairs of correlations. 
-
-# png(paste0('//home/timok/timok/SALIENSEAS/SEAS5/ensex/statistics/multiday/plots/Predictability_lds_resampled_SV.png'),type='cairo')
-# dev.off()
-```
-
-``` r
-##And plot
-par(mar=c(4.5,5.1,2.1,2.1),cex.axis=1.5, cex.lab=1.5,cex.main=1.5)
-boxplot(list(correlations_lds[,,'2'],correlations_lds[,,'3'],correlations_lds[,,'4'],correlations_lds[,,'5']),
-        xaxt="n",xlab='Lead time',ylab=bquote('Spearman'~r))
-for (i in 1:length(CI_bounds_boxplots[1,]))  {
-  polygon(c(0,6,6,0),c(rep(CI_bounds_boxplots[1,i],2),rep(CI_bounds_boxplots[2,i],2)),col=gray(0.8,alpha=0.3))}
-  # lines(0:6,rep(CI_bounds_boxplots[1,i],7))
-  # text(1,CI_bounds_boxplots[1,i],bquote('threshold'~r),cex=1.3)
-  # lines(0:6,rep(CI_bounds_boxplots[2,i],7))
-  # text(1,CI_bounds_boxplots[2,i],bquote('threshold'~r),cex=1.3)
-  # }
-Axis(side=1,at=1:5,labels = c(as.character(2:5),'all'))
-```
-
-![](Independence_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->

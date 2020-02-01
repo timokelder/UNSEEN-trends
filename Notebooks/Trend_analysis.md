@@ -8,8 +8,9 @@ extreme value theory. We will quantify the trend in the 100-year
 precipitation extremes over time (1981-2015) for the West Coast of
 Norway and for Svalbard.
 
-\#\#\#Import data and packages The data for the West coast and Svalbard
-are loaded.
+### Import data and packages
+
+The data for the West coast and Svalbard are loaded.
 
 ``` r
 # dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
@@ -33,7 +34,11 @@ obs=Extremes_obs[as.character(1981:2015)]
 year_vector=as.numeric(levels(df_WC$Year))[df_WC$Year] ###The year is a factor, extract the values  
 ```
 
-And then we compare the 1981 and 2016 return value plots for SEAS5
+## We then compare the 1981 and 2015 return value plots
+
+A GEV distribution including parameters that linearly relate to the time
+period 1981-2015 is fitted to the UNSEEN ensemble. The resulting return
+value plots for the covariates 1981 and 2015 are shown here.
 
 ``` r
 extremes_wc= df_WC$V1 * mean(obs)/mean(df_WC$V1) ## we create a mean bias corrected series  
@@ -111,10 +116,18 @@ ggarrange(p_wc, p_sv,
 }
 
 CD=Plot_non_stationary(GEV_type = 'GEV')
+CD
 ```
 
-We plot the West coast region for the SEAS5 trend and the observed
-trend. We then perform a mean bias correction to SEAS5.
+![](Trend_analysis_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+## Testing the fits
+
+We test whether the non-stationary fit is significantly different to the
+stationary fit. Additionally, we print the percentage change in 100yr
+precipitation values between 1981 and 2015. We first do this for the
+observed over Norway and then for the UNSEEN ensemble over Norway and
+Svalbard.
 
 ``` r
 ####Testing for Non-stationarity in the observed
@@ -205,7 +218,21 @@ lr.test(SEAS5_GEV_non_stat_SV,SEAS5_GEV_stat_SV)
 rvs_SEAS5_SV_trend_mm=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[2,],qcov.base=qcovs[1,])  #Calculate the return values and confidence intervals for each 
 rvs_SEAS5_SV_base=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = 100,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
 rvs_SEAS5_SV_trend_percent=100*rvs_SEAS5_SV_trend_mm/rvs_SEAS5_SV_base[2]
+print(paste('UNSEEN trend and uncertainty over Svalbard:', as.character(rvs_SEAS5_SV_trend_percent[1,2]),
+            as.character(rvs_SEAS5_SV_trend_percent[1,1]),as.character(rvs_SEAS5_SV_trend_percent[1,3])))
 ```
+
+    ## [1] "UNSEEN trend and uncertainty over Svalbard: 7.99531929477084 3.66703506685388 12.3236035226878"
+
+## Illustrating the change in 100-yr values in the observed and in the UNSEEN ensemble
+
+Here, we visualize how the observed, with its small sample, needs to
+extrapolate the trend in the 100-year values, and thus will result in
+very large uncertianty estimates. The UNSEEN ensemble boosts up the
+sample size and therefore can better constrain the parameters and better
+estimate the trend.
+
+We first do the calculation for Norway
 
 ``` r
 ###Plotting the uncertainty estimation
@@ -265,20 +292,15 @@ AB=
           common.legend = T,
           ncol = 2, nrow = 1)
 
-# ABCD=
-  ggarrange(AB, CD,
-            legend='top',
-            common.legend = T,
-            ncol = 1, nrow = 2) #%>% 
+AB
 ```
 
 ![](Trend_analysis_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
-``` r
-     # ggsave(filename = "../graphs/Trends2.png",width =180,height = 180, units='mm',dpi=300)
-```
-
 ## Calculate the 2015 return period of the 1981 100-year value
+
+What does the 100-year value in 1981 look like in 2015? How often can we
+expect it to occur?
 
 ``` r
 ##The 100 year value in 1981
@@ -297,3 +319,21 @@ which.min(abs(GEV_2015[,2] - RV_100yr_1981)) #The 41-year value!
 
     ## 41-year return level 
     ##                   12
+
+## Plot for publication
+
+Finally, we aggregate the two plots for submission
+
+``` r
+# ABCD=
+  ggarrange(AB, CD,
+            legend='top',
+            common.legend = T,
+            ncol = 1, nrow = 2) #%>% 
+```
+
+![](Trend_analysis_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+     # ggsave(filename = "../graphs/Trends2.png",width =180,height = 180, units='mm',dpi=300)
+```

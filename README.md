@@ -5,4 +5,13 @@ In this repository, we provide code for the paper UNSEEN-trends: Towards detecti
 ## Short intro
 In this study, we use Norway and Svalbard as a case study to explore the UNSEEN-trends approach: using [SEAS5, Johnson et al., 2019](https://www.geosci-model-dev.net/12/1087/2019/gmd-12-1087-2019.pdf) to analyze trends in extreme precipitation. These regions have recently faced severe events, raising the question whether these kind of events have occurred by chance or a the new norm. From observations, it is impossible to analyze the changes in these severe events: How have the 100-year precipitation events changed over last 35 years? By pooling ensemble members and lead times into an UNprecedented Simulated Extreme ENsemble (UNSEEN, [Thompson et al., 2017](https://www.nature.com/articles/s41467-017-00275-3)), we can try to answer this question. 
 
-In notebooks, We discuss the requirements of [ensemble member independence](Notebooks/Independence.md), [model stability](Notebooks/Model_stability.md) and we perform a [fidelity analysis](Notebooks/Model_fidelity.md). We then illustrate the [UNSEEN-Trends approach](Notebooks/Trend_analysis.md). We hope this approach may see many applications across a range of scientific fields!
+## Data
+SEAS5 hindcasts are provided every month between the years 1981-2016, with 25 ensemble members. The hindcasts are downloaded from the ECMWF MARS server onto the server of the Norwegian Meteorological Institute (MetNor). We then mined the hindcasts, i.e. we extracted the target variable from each forecast to generate the UNSEEN ensemble. This process is described in [generating the UNSEEN ensemble](Mining/Mining.md) but unfortunately cannot be reproduced without access to the server of MetNor. We have provided the resulting UNSEEN ensembles in the [data folder](Data/Extremes). 
+
+## Evaluation of the UNSEEN ensemble
+
+In notebooks, We discuss the requirements of [ensemble member independence](Notebooks/Independence.md), [model stability](Notebooks/Model_stability.md) and we perform a [fidelity analysis](Notebooks/Model_fidelity.md). 
+
+## The UNSEEN-trends approach
+
+We then illustrate the [UNSEEN-Trends approach](Notebooks/Trend_analysis.md). We hope this approach may see many applications across a range of scientific fields!

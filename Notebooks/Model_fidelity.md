@@ -223,13 +223,13 @@ EVT_plot <- function(obs=obs,GEV_type) {
   datapoints_S5=data.frame(cbind(rp_S5,S5_raw_sorted,S5_corrected_sorted,obs_sorted))
   
   ##And plot
-  cols=c("SEAS5"="black","SEAS5 mean bias corrected"="orange","Observations"="blue") ##for  the legend
+  cols=c("SEAS5-100"="black","SEAS5 UNSEEN ensemble"="orange","Observations"="blue") ##for  the legend
   p1=ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
     geom_line(aes(y = S5),col='black')+
-    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5"),alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5-100"),alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_raw_sorted),col='black',size=1)+
     geom_line(aes(y = S5_corrected),col='orange')+
-    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 mean bias corrected'), alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 UNSEEN ensemble'), alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_corrected_sorted),col='orange',size=1)+
     geom_line(aes(y = Obs),col='blue')+
     geom_ribbon(aes(ymin=Obs_l,ymax=Obs_h,fill='Observations'), alpha=0.3)+

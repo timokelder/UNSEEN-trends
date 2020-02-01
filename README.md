@@ -20,8 +20,8 @@ How have the 100-year precipitation events changed over last 35 years? The large
 
 ## Outlook
 
-We envision that further applications can 1) help estimateing design values, especially relevant for data scarce regions; 2) improve risk estimation of natural hazards by coupling UNSEEN to impact models; 3) detect trends in rare climate extremes, including variables other than precipitation; and 4) increase our physical understanding of the drivers of non-stationarity of climate extremes, through the possible attribution of detected trends. 
+We envision that further applications can 1) help estimate design values, especially relevant for data scarce regions; 2) improve risk estimation of natural hazards by coupling UNSEEN to impact models; 3) detect trends in rare climate extremes, including variables other than precipitation; and 4) increase our physical understanding of the drivers of non-stationarity of climate extremes, through the possible attribution of detected trends. 
 
 We hope this approach may see many applications across a range of scientific fields!
 
-Please don't hesitate to ask any questions. 
+If any questions may arise, please don't hesitate to get in touch t.kelder@lboro.ac.uk. 

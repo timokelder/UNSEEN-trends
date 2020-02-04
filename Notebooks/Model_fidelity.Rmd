@@ -180,6 +180,21 @@ p1
 
 ```
 
+## Testing the fits
+
+```{r}
+##Sensitivity to extreme value distribution
+#type= c("GEV", "GP", "PP", "Gumbel", "Exponential")
+Obs_GEV <- fevd(x = obs,type='GEV')
+Obs_Gumbel <- fevd(x = obs,type = 'Gumbel')
+lr.test(Obs_Gumbel,Obs_GEV)
+SEAS5_GEV <- fevd(x = extremes_wc_biascor,type='GEV') #the bias corrected version
+SEAS5_Gumbel <- fevd(x = extremes_wc_biascor,type='Gumbel')
+lr.test(SEAS5_Gumbel,SEAS5_GEV)
+```
+
+## Sensitivity tests
+
 ```{r fig.height=12, fig.width=8}
 p2=EVT_plot(obs=obs,GEV_type = 'Gumbel')
 

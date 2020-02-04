@@ -256,6 +256,40 @@ p1
 
 ![](Model_fidelity_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
+## Testing the fits
+
+``` r
+##Sensitivity to extreme value distribution
+#type= c("GEV", "GP", "PP", "Gumbel", "Exponential")
+Obs_GEV <- fevd(x = obs,type='GEV')
+Obs_Gumbel <- fevd(x = obs,type = 'Gumbel')
+lr.test(Obs_Gumbel,Obs_GEV)
+```
+
+    ## 
+    ##  Likelihood-ratio Test
+    ## 
+    ## data:  obsobs
+    ## Likelihood-ratio = 4.7525, chi-square critical value = 3.8415, alpha =
+    ## 0.0500, Degrees of Freedom = 1.0000, p-value = 0.02925
+    ## alternative hypothesis: greater
+
+``` r
+SEAS5_GEV <- fevd(x = extremes_wc_biascor,type='GEV') #the bias corrected version
+SEAS5_Gumbel <- fevd(x = extremes_wc_biascor,type='Gumbel')
+lr.test(SEAS5_Gumbel,SEAS5_GEV)
+```
+
+    ## 
+    ##  Likelihood-ratio Test
+    ## 
+    ## data:  extremes_wc_biascorextremes_wc_biascor
+    ## Likelihood-ratio = 27.545, chi-square critical value = 3.8415, alpha =
+    ## 0.0500, Degrees of Freedom = 1.0000, p-value = 1.535e-07
+    ## alternative hypothesis: greater
+
+## Sensitivity tests
+
 ``` r
 p2=EVT_plot(obs=obs,GEV_type = 'Gumbel')
 
@@ -271,7 +305,7 @@ ggarrange(p2, p1,p3,
           common.legend = TRUE) #%>%
 ```
 
-![](Model_fidelity_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](Model_fidelity_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 # ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )

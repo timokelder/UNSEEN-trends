@@ -71,8 +71,10 @@ plot_hist <- function(bootstrapped_array_WC,fun,main,col,units) {
     geom_vline(aes(xintercept=fun(obs)),
               color="blue", size=2)+
     labs(title=main,y= 'Number of bootstrapped series',x =paste0("SON-3DP (",units,")"))+
-    theme_classic()
-    # theme(text=element_text(size=7,family='sans'))
+    theme_classic()+
+    theme(text=element_text(size=7),
+        axis.text = element_text(size=7))
+    
 }
 
 
@@ -88,11 +90,13 @@ p4_cor=plot_hist(bootstrapped_array_WC_biascor,kurtosis,'Kurtosis','orange',unit
 
 ggarrange(p1,p2,p3,p4,
           labels = c("a", "b","c","d"),
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           ncol = 2, nrow = 2)#%>%
     #ggsave(filename = "../graphs/Fidelity_UNSEEN.pdf",width =180,height = 180, units='mm',dpi=300)
 # 
 ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
           labels = c("a", "b","c","d"),
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           ncol = 2, nrow = 2)#%>%
    # ggsave(filename = "../graphs/Fidelity_UNSEEN_biascor.pdf",width =180,height = 180, units='mm',dpi=300)
 
@@ -103,9 +107,6 @@ ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
 We fit the GEV distribution to the simulated and to the observed data. The parameters of the distribution are the location (mean), scale (variation) and shape (shape of the distribution).  
 
 ```{r}
-
-###Highest extreme possible in comparison to observed?
-print(paste('Highest extreme possible in comparison to observed:', as.character(max(extremes_wc_biascor)/max(obs))))
 
 EVT_plot <- function(obs=obs,GEV_type) {
   ##Fit GEV to 1) observed 2) raw SEAS5 3) mean bias corrected SEAS5
@@ -124,8 +125,6 @@ EVT_plot <- function(obs=obs,GEV_type) {
   
   ##Now calculate the return levels and their confidence intervals for each return period within rperiods
   rperiods = c(seq(from = 1.01, to = 1.5, by =0.1),1.7,2,3, 5, 10, 20, 50, 80, 100, 120, 200, 250, 300, 500, 800,2000,5000)
-  
-  ############### cHECK WHETHER THE BOOT GOES ALRIGHT
   
   rvs_obs=ci.fevd(fit_obs,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal") 
   colnames(rvs_obs) = c('Obs_l','Obs','Obs_h') #Rename the col
@@ -147,13 +146,13 @@ EVT_plot <- function(obs=obs,GEV_type) {
   datapoints_S5=data.frame(cbind(rp_S5,S5_raw_sorted,S5_corrected_sorted,obs_sorted))
   
   ##And plot
-  cols=c("SEAS5-100"="black","SEAS5 UNSEEN ensemble"="orange","Observations"="blue") ##for  the legend
+  cols=c("UNSEEN"="black","UNSEEN-BC"="orange","Observations"="blue") ##for  the legend
   p1=ggplot(data = rvs_WC_stationair,aes(x=rperiods))+
     geom_line(aes(y = S5),col='black')+
-    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="SEAS5-100"),alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_l,ymax=S5_h,fill="UNSEEN"),alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_raw_sorted),col='black',size=1)+
     geom_line(aes(y = S5_corrected),col='orange')+
-    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='SEAS5 UNSEEN ensemble'), alpha=0.3)+
+    geom_ribbon(aes(ymin=S5_corrected_l,ymax=S5_corrected_h,fill='UNSEEN-BC'), alpha=0.3)+
     geom_point(data=datapoints_S5,aes(x=rp_S5,y = S5_corrected_sorted),col='orange',size=1)+
     geom_line(aes(y = Obs),col='blue')+
     geom_ribbon(aes(ymin=Obs_l,ymax=Obs_h,fill='Observations'), alpha=0.3)+
@@ -164,7 +163,9 @@ EVT_plot <- function(obs=obs,GEV_type) {
     theme(legend.position = c(.95, .05),
       legend.justification = c("right", "bottom"),
       legend.box.just = "right",
-      legend.title = element_blank())+
+      legend.title = element_blank(),
+      text=element_text(size=7),
+        axis.text = element_text(size=7))+
     xlab('Return period (years)')+
     ylab('Three-day precipitation (mm)')+
     coord_cartesian(ylim = c(0, 300)) 
@@ -174,7 +175,7 @@ EVT_plot <- function(obs=obs,GEV_type) {
 }
 
 p1=EVT_plot(obs=obs,GEV_type = 'GEV')
-# ggsave(p1,filename = "../graphs/Fidelity_EVT.png")#,width =180,height = 180, units='mm',dpi=300)
+ggsave(p1,filename = "../graphs/Fidelity_EVT.png",width =88,height = 100, units='mm',dpi=300)
 p1
 
 
@@ -192,6 +193,31 @@ SEAS5_GEV <- fevd(x = extremes_wc_biascor,type='GEV') #the bias corrected versio
 SEAS5_Gumbel <- fevd(x = extremes_wc_biascor,type='Gumbel')
 lr.test(SEAS5_Gumbel,SEAS5_GEV)
 ```
+## Fun statistics
+```{r}
+##Return period of the highest observed event
+highest_obs=max(obs)
+rvs_obs2=ci.fevd(Obs_GEV,alpha = 0.05,type='return.level',return.period = rps[1:250],method ="normal") 
+which.min(abs(rvs_obs2[,2] - highest_obs)) #The 41-year value!
+
+rvs_seas5_2=ci.fevd(SEAS5_GEV ,alpha = 0.05,type='return.level',return.period = rps[1:250],method ="normal") 
+which.min(abs(rvs_seas5_2[,2] - highest_obs)) 
+
+##Return period of the highest UNSEEN event
+highest_seas5=max(extremes_wc_biascor)
+rvs_seas5_3=ci.fevd(SEAS5_GEV ,alpha = 0.05,type='return.level',return.period = seq(1000,5000,10),method ="normal") 
+which.min(abs(rvs_seas5_3[,2] - highest_seas5))
+rvs_obs3=ci.fevd(Obs_GEV,alpha = 0.05,type='return.level',return.period = seq(2,5000,100),method ="normal") 
+which.min(abs(rvs_obs3[,1] - highest_seas5))
+
+
+###Highest extreme possible in comparison to observed?
+print(paste('Highest extreme possible in comparison to observed:', 
+            as.character(highest_seas5/highest_obs)))
+
+
+```
+
 
 ## Sensitivity tests
 
@@ -206,9 +232,10 @@ p3=EVT_plot(obs=obs_test,GEV_type = 'GEV')
 
 ggarrange(p2, p1,p3,
           labels = c("a", "b","c"),
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           ncol = 1, nrow = 3,
           common.legend = TRUE) #%>%
-# ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =8,height = 12 )
+# ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =180,height = 210,units = 'mm' )
 # ggsave(p2,filename = "../graphs/Fidelity_Gumbel.png")
 # ggsave(p3,filename = "../graphs/Fidelity_obs_adjusted.png")
 

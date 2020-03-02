@@ -79,14 +79,16 @@ p_wc=ggplot(data = rvs_WC,aes(x=rperiods))+
   geom_ribbon(aes(ymin=S5_1981_l,ymax=S5_1981_h),fill='black',alpha=0.5,show.legend = T)+
   geom_line(aes(y = S5_2015),col='red')+
   geom_ribbon(aes(ymin=S5_2015_l,ymax=S5_2015_h),fill='red', alpha=0.5,show.legend = T)+
-  geom_line(aes(y = Obs_1981),col='black')+
+  geom_line(aes(y = Obs_1981),col='black',linetype ='dashed')+
   geom_ribbon(aes(ymin=Obs_1981_l,ymax=Obs_1981_h),fill='black', alpha=0.1,show.legend = T)+
-  geom_line(aes(y = Obs_2015),col='red')+
+  geom_line(aes(y = Obs_2015),col='red',linetype ='dashed')+
   geom_ribbon(aes(ymin=Obs_2015_l,ymax=Obs_2015_h),fill='red', alpha=0.1,show.legend = T)+
   scale_x_continuous(trans='log10')+
   theme_classic()+
   xlab('Return period (years)')+
-  ylab('Three-day precipitation (mm)')
+  ylab('Three-day precipitation (mm)')+
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7))
 
 rvs_sv_1981=RV_ci(extremes = df_SV$V1,covariate = c(df_WC$Year),return_period = rperiods,covariate_values = 1,GEV_type = GEV_type) ##calc the return values
 colnames(rvs_sv_1981) = c('S5_1981_l','S5_1981','S5_1981_h','S5_1981_sd') #Rename the column
@@ -108,11 +110,14 @@ p_sv=ggplot(data = rvs_SV,aes(x=rperiods))+
   scale_fill_manual(name="Years",values=cols) +
   theme(axis.title.y=element_blank())+
   xlab('Return period (years)')+
-  ylab('Three-day precipitation (mm)')
+  ylab('Three-day precipitation (mm)')+
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7))
 
 ggarrange(p_wc, p_sv,
           labels = c("c", "d"),
           legend='top',
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           common.legend = T,
           hjust = c(-0.5,1),
           ncol = 2, nrow = 1)
@@ -201,7 +206,7 @@ ci_wc_biascor=RV_ci(extremes = extremes_wc,covariate = c(df_WC$Year),return_peri
 
 
 ###Bias corrected series
-cols=c("Traditional"="blue","UNSEEN-trends"="orange")
+cols=c("Observed"="blue","UNSEEN-trends"="orange")
 p_trend_wc=
   ggplot()+
   ggtitle("Norway") +
@@ -211,12 +216,14 @@ p_trend_wc=
   geom_line(aes(x=1981:2015,y = ci_wc_biascor[,2]),col='orange')+
   geom_ribbon(aes(x=1981:2015,ymin = ci_wc_biascor[,1],ymax=ci_wc_biascor[,3],fill="UNSEEN-trends"),alpha=0.5)+
   geom_line(aes(x=1981:2015,y = ci_obs[,2]),col='blue')+
-  geom_ribbon(aes(x=1981:2015,ymin = ci_obs[,1],ymax=ci_obs[,3],fill="Traditional"),alpha=0.2)+
+  geom_ribbon(aes(x=1981:2015,ymin = ci_obs[,1],ymax=ci_obs[,3],fill="Observed"),alpha=0.2)+
   theme_classic()+
   ylab('Three-day precipitation (mm)')+
   scale_fill_manual(name="Method",values=cols) +
-  theme(axis.title.x=element_blank())+
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(axis.title.x=element_blank(),
+  plot.title = element_text(hjust = 0.5),
+  text=element_text(size=7),
+  axis.text = element_text(size=7))
 
 
 
@@ -241,14 +248,17 @@ ggplot()+
   theme_classic()+
   theme(legend.position = "none",
         axis.title.x=element_blank(),
-        axis.title.y=element_blank())+
-  theme(plot.title = element_text(hjust = 0.5))
+        axis.title.y=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        text=element_text(size=7),
+        axis.text = element_text(size=7))
 
 
 AB=
   ggarrange(p_trend_wc, p_trend_sv,
           labels = c("a", "b"),
           hjust = c(-0.5,1),
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           common.legend = T,
           ncol = 2, nrow = 1)
 
@@ -263,13 +273,22 @@ AB
 What does the 100-year value in 1981 look like in 2015? How often can we expect it to occur?
 
 ```{r}
+##For Svalbard
 ##The 100 year value in 1981
 RV_100yr_1981=rvs_SEAS5_SV_base[2]
 ###The 30 till 100 year values in 2015
 GEV_2015=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = seq(30,100),method ="normal",qcov=qcovs[2,])  #Calculate the return values and confidence intervals for each 
-GEV_2015[71, 2]/RV_100yr_1981
 ##Which in the sequence is closest to the 1981 value?
-which.min(abs(GEV_2015[,2] - RV_100yr_1981)) #The 41-year value!
+which.min(abs(GEV_2015[,2] - RV_100yr_1981)) #The 41-year value!. Repeat for confidence intervals: GEV_2015[,1] and GEV_2015[,3]
+
+##100-yr RV in 2015 -> what in 1981?
+RV_100yr_2015=GEV_2015['100-year return level',2]
+GEV_1981=ci(SEAS5_GEV_non_stat_SV,alpha = 0.05,type='return.level',return.period = seq(30,700),method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each 
+which.min(abs(GEV_1981[,2] - RV_100yr_2015)) #The 41-year value!. Repeat for confidence intervals: GEV_2015[,1] and GEV_2015[,3]
+
+##To be equally prepared in2015 for the 100-year return value of 1981, one would need to create defence systems based on the 287-year level.
+
+##No observed series
 
 ```
 
@@ -280,9 +299,10 @@ Finally, we aggregate the two plots for submission
 # ABCD=
   ggarrange(AB, CD,
             legend='top',
+            font.label = list(size = 7, color = "black", face ="bold", family = NULL),
             common.legend = T,
             ncol = 1, nrow = 2) #%>% 
-     # ggsave(filename = "../graphs/Trends2.png",width =180,height = 180, units='mm',dpi=300)
+     # ggsave(filename = "../graphs/Trends2_font7.pdf",width =180,height = 180, units='mm',dpi=300)
 
 ```
 

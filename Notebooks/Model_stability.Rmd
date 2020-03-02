@@ -9,7 +9,7 @@ output: github_document
 Rscript -e "rmarkdown::render('Model_stability.Rmd')"
 ```
 
-In this notebook, we assess the stability of the model over forecast length. Does the statistical distribution of extreme precipitation increase (or decrease) with longer lead times? We assess the distribution of extreme precipitation between different forecast lead times. The extremes are defined as the maxima three-day precipitation values.   
+In this notebook, we assess the stability of the model over forecast length. Does the statistical distribution of extreme precipitation increase (or decrease) with longer lead times? We assess the distribution of extreme precipitation between different forecast lead times. The extremes are defined as the maximum three-day precipitation values.   
 
 ## Import data and packages
 
@@ -54,7 +54,9 @@ p1=ggplot(df_WC, aes(x = V1, colour = Leadtime)) +
   theme_classic()+
   theme(legend.position = "none")+
   scale_colour_manual(values=cbbPalette)+
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7),
+        plot.title = element_text(hjust = 0.5))
   
 
 p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
@@ -65,8 +67,10 @@ p2=ggplot(df_SV, aes(x = V1, colour = Leadtime)) +
   theme(legend.position = "none",
       axis.title.y=element_blank())+
   scale_colour_manual(values=cbbPalette)+
-  theme(plot.title = element_text(hjust = 0.5))
-
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7),
+        plot.title = element_text(hjust = 0.5))
+  
 
 
 p1
@@ -147,7 +151,10 @@ p3=ggplot(df_quantiles_wc)+
   scale_fill_manual(name="Pooled data",values=cols) +
   scale_colour_manual(values=cbbPalette)+
   xlab('Return period (years)')+
-  ylab('Three-day precipitation (mm)')
+  ylab('Three-day precipitation (mm)')+
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7))
+  
 
 p4=ggplot(df_quantiles_sv)+
   geom_line(aes(x=rps_all,y=quantiles_all))+
@@ -166,7 +173,10 @@ p4=ggplot(df_quantiles_sv)+
     # legend.box.just = "right")+
   guides(fill = FALSE)+
   xlab('Return period (years)')+
-  ylab('Three-day precipitation (mm)')
+  ylab('Three-day precipitation (mm)')+
+  theme(text=element_text(size=7),
+        axis.text = element_text(size=7))
+  
 
 p3
 p4
@@ -181,8 +191,9 @@ ggarrange(p1, p2, p3,p4,
         labels = c("a", "b", "c", "d"),
         hjust = c(-0.5,1,-0.5,1),
         ncol = 2, nrow = 2,
-        common.legend = TRUE) #%>% 
-  #ggsave(filename = "../graphs/Stability.png", width = 180, height = 180, units='mm')
+        font.label = list(size = 7, color = "black", face ="bold", family = NULL),
+        common.legend = TRUE) %>%
+  ggsave(filename = "../graphs/Stability_font7.png", width = 180, height = 180, units='mm')
 
 
 ```

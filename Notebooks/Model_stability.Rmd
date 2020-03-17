@@ -195,5 +195,14 @@ ggarrange(p1, p2, p3,p4,
         common.legend = TRUE) %>%
   ggsave(filename = "../graphs/Stability_font7.png", width = 180, height = 180, units='mm')
 
+##For presentation
+ggarrange(p1, p2, 
+        labels = c("a", "b"),
+        hjust = c(-0.5,1,-0.5,1),
+        ncol = 2, nrow = 1,
+        font.label = list(size = 14, color = "black", face ="bold", family = NULL),
+        common.legend = TRUE) %>%
+  ggsave(filename = "../graphs/Stability_pptfont14.png", width = 180, height = 110, units='mm')
+
 
 ```

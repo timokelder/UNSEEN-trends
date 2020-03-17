@@ -102,6 +102,43 @@ ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
 
 ```
 
+##Combine the plots
+
+```{r}
+
+plot_hist_combined <- function(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun,main,units,fontsize) {
+  bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)
+  bootstrapped_fun_biascor=apply(bootstrapped_array_WC_biascor,MARGIN = 2,FUN = fun)
+  ggplot()+
+    geom_histogram(aes(x=bootstrapped_fun),color='black',fill='black',alpha=0.5,bins=30)+
+    geom_vline(aes(xintercept=quantile(bootstrapped_fun,probs = c(0.025,0.975))),
+              color="black", linetype="dashed", size=1)+
+    geom_histogram(aes(x=bootstrapped_fun_biascor),color='black',fill='orange',alpha=0.5,bins=30)+
+    geom_vline(aes(xintercept=quantile(bootstrapped_fun_biascor,probs = c(0.025,0.975))),
+              color="orange", linetype="dashed", size=1)+
+    geom_vline(aes(xintercept=fun(obs)),
+              color="blue", size=2)+
+    labs(title=main,y= 'Number of bootstrapped series',x =paste0("SON-3DP (",units,")"))+
+    theme_classic()+
+    theme(text=element_text(size=fontsize),
+        axis.text = element_text(size=fontsize))
+    
+}
+
+
+p1_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=mean,main = 'Mean',units = 'mm',fontsize=14)
+p2_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=sd,main = 'Standard Deviation',units = 'mm',fontsize=14)
+p3_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=skewness,main = 'Skewness',units = '-',fontsize=14)
+p4_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=kurtosis,main = 'Kurtosis',units = '-',fontsize=14)
+
+ggarrange(p1_comb,p2_comb,p3_comb,p4_comb,
+          labels = c("a", "b","c","d"),
+          font.label = list(size = 14, color = "black", face ="bold", family = NULL),
+          ncol = 2, nrow = 2)%>%
+    ggsave(filename = "../graphs/Fidelity_UNSEEN_combined.png",width =180,height = 180, units='mm',dpi=300)
+
+```
+
 
 ### Return value comparison
 We fit the GEV distribution to the simulated and to the observed data. The parameters of the distribution are the location (mean), scale (variation) and shape (shape of the distribution).  

@@ -1,0 +1,62 @@
+---
+title: "Package use for NPJ paper"
+author: "Timo Kelder"
+date: "October 19, 2019"
+output: github_document 
+---
+
+
+In this notebook, we assess the model fidelity of the SEAS5 UNSEEN ensemble over the Norwegian West Coast compared to observed values. We start by bootstrapping  the ensemble and then compare the extreme value distributions for both. For specifics, please see the paper.
+
+### Load the data
+These are spatially-averaged precipitation values. 
+
+```{r}
+# Open the netcdf files
+# We should be in the UNSEEN-trends directory.
+SEAS5_wc <- read.csv("Data/SEAS5_wc.csv") ## The UNSEEN ensemble
+# SEAS5_sv_nc = nc_open('Data/Extremes_SV.nc')
+SeNorge <- read.csv("Data/SeNorge.csv") ## The observed
+ERA5 <- read.csv("Data/ERA5.csv") ## Reanalysis
+```
+
+
+```{r}
+head(SEAS5_wc)
+names(SeNorge)[names(SeNorge) == "time"] <- "year"      # rename the time variable to 'year', in order for the functions to work.
+SeNorge <- SeNorge[SeNorge$year > 1980 & SeNorge$year < 2016,] # same time window as SEAS5
+head(SeNorge)
+```
+Load the package.
+```{r}
+library(UNSEEN)
+```
+
+## Independence testing
+To what extent do the ensemble members correlate beyond what we can expect? The spearman rho correlation is plotted for each pairwise correlation test (with 25 members we have 300 unique pairs). The grey shading shows the 95% confidence intervals we can expect for the boxplot whiskers, inter-quartile range and median. 
+
+
+```{r}
+Independence_test(ensemble = SEAS5_wc, n_lds = 4)
+```
+
+```{r}
+plot_unseen(ensemble = SEAS5_wc, obs = SeNorge, ylab = "SON 3-day precipitation (mm)")
+
+#Redo for ERA5 LSP
+ERA5_df <- ERA5
+names(ERA5_df)[names(ERA5_df) == "LSP"] <- "precipitation"      # rename the time variable to 'year', in order for the functions to work.
+ERA5_df <- ERA5_df[ERA5_df$year < 2016,] # same time window as SEAS5
+
+plot_unseen(ensemble = SEAS5_wc, obs = ERA5_df, ylab = "SON 3-day precipitation (mm)")
+```
+
+```{r}
+head(SEAS5_wc)
+Model_stability_density(SEAS5_wc)
+```
+
+```{r}
+Boottest_biascor(obs = SeNorge$precipitation, ensemble = SEAS5_wc$precipitation)
+Boottest_biascor(obs = ERA5_df$precipitation, ensemble = SEAS5_wc$precipitation)
+```

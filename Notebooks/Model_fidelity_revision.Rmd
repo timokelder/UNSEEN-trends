@@ -5,39 +5,22 @@ date: "October 19, 2019"
 output: github_document 
 ---
 
-```{r eval=FALSE, include=FALSE}
-Rscript -e "rmarkdown::render('Predictive_skill.Rmd')"
-```
-
-In this notebook, we assess the model fidelity of the SEAS5 UNSEEN ensemble over the Norwegian West Coast compared to observed values. We start by bootstrapping  the ensemble and then compare the extreme value distributions for both. For specifics, please see the paper.
-
-## Import data and packages
-
 ```{r}
-# dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
-# plotdir=paste0(dir,'/statistics/multiday/plots')
-# dir='/home/timok/ensex'
-# plotdir='/home/timok/Documents/ensex/R/graphs'
-dir='C:/Users/timo/OneDrive - Loughborough University/GitHub/UNSEEN-trends/Data'
-
-source('Load_data.R')
-library(moments)
-library(extRemes)
-library("ggpubr")
+# Open the netcdf files
+# We should be in the UNSEEN-trends/Notebooks directory.
+SEAS5_wc <- read.csv("../Data/SEAS5_wc.csv") ## The UNSEEN ensemble
+# SEAS5_sv_nc = nc_open('Data/Extremes_SV.nc')
+SeNorge <- read.csv("../Data/SeNorge.csv") ## The observed
+ERA5 <- read.csv("../Data/ERA5.csv") ## Reanalysis
 ```
-
 
 
 ```{r}
-require(plyr)
-names(dimnames(Extremes_WC)) <- c('Member', 'Leadtime', 'Year')
-names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
-df_WC=adply(Extremes_WC, 1:3) ## Convert the array with extremes to a data frame 
-df_SV=adply(Extremes_SV, 1:3)
-obs=Extremes_obs[as.character(1981:2015)]
-
+head(SEAS5_wc)
+names(SeNorge)[names(SeNorge) == "time"] <- "year"      # rename the time variable to 'year', in order for the functions to work.
+SeNorge <- SeNorge[SeNorge$year > 1980 & SeNorge$year < 2016,] # same time window as SEAS5
+head(SeNorge)
 ```
-
 
 ## Bootstrapping
 From the [rank histograms](Rank_histograms.md), we've learned that the raw forecast have a low bias.  The anomalies show a flat rank histogram, and therefore we select the mean bias correction as fixed value to correct all values within the ensemble. This avoids extrapolation beyond the quantile range. We show the sensitivity to using different quantiles for this correction. 

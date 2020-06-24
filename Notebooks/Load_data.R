@@ -4,13 +4,15 @@ library('plyr')
 library("tidyverse")
 options(bitmapType = 'cairo')
 
-nc=nc_open(paste0(dir,'/Extremes/Extremes.nc'))#for lonlat
-nc_sv=nc_open(paste0(dir,'/Extremes/Extremes_SV.nc'))#for lonlat
-nc_obs=nc_open(paste0(dir,'/Extremes/SeNorge.nc'))#for lonlat
+nc=nc_open(paste0(dir,'/Extremes.nc'))#for lonlat
+nc_sv=nc_open(paste0(dir,'/Extremes_SV.nc'))#for lonlat
+nc_obs=nc_open(paste0(dir,'/SeNorge.nc'))#for lonlat
+nc_era=nc_open(paste0(dir,'/Extremes/ERA5.nc'))#for lonlat
 
 Extremes_WC=ncvar_get(nc)
 Extremes_SV=ncvar_get(nc_sv)
 Extremes_obs=ncvar_get(nc_obs)
+Extremes_era=ncvar_get(nc_era)
 # Extremes_SV
 dim(Extremes_WC) # 25 4 35 Ensemble Leadtime Year 
 

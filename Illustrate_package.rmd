@@ -15,7 +15,7 @@ These are spatially-averaged precipitation values.
 # Open the netcdf files
 # We should be in the UNSEEN-trends directory.
 SEAS5_wc <- read.csv("Data/SEAS5_wc.csv") ## The UNSEEN ensemble
-# SEAS5_sv_nc = nc_open('Data/Extremes_SV.nc')
+# SEAS5_sv <- read.csv("Data/Extremes_sv.csv")
 SeNorge <- read.csv("Data/SeNorge.csv") ## The observed
 ERA5 <- read.csv("Data/ERA5.csv") ## Reanalysis
 ```

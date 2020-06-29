@@ -1,0 +1,114 @@
+---
+title: "Timeseries"
+author: "Timo Kelder"
+date: "June 20, 2020"
+output: github_document 
+---
+
+In this notebook, we graphically illustrate the UNSEEN data as compared to observed timeseries.
+
+## Import data and packages
+
+```{r}
+# dir='//home/timok/timok/SALIENSEAS/SEAS5/ensex'
+# plotdir=paste0(dir,'/statistics/multiday/plots')
+# dir='/home/timok/ensex'
+# plotdir='/home/timok/Documents/ensex/R/graphs'
+dir='C:/Users/timo/OneDrive - Loughborough University/GitHub/UNSEEN-trends/Data'
+
+source('Load_data.R')
+# library(moments)
+# library(extRemes)
+# library("ggpubr")
+
+read.csv('../Data/ERA5_sv.csv')
+
+
+```
+
+
+
+```{r}
+require(plyr)
+names(dimnames(Extremes_WC)) <- c('Member', 'Leadtime', 'Year')
+names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
+df_WC=adply(Extremes_WC, 1:3) ## Convert the array with extremes to a data frame 
+colnames(df_WC) <-  c("Member","Leadtime", "year", "precipitation")
+df_WC$year <- as.numeric(as.character(df_WC$year))
+df_SV=adply(Extremes_SV, 1:3)
+colnames(df_SV) <-  c("Member","Leadtime", "year", "precipitation")      
+df_SV$year <- as.numeric(as.character(df_SV$year))
+obs=Extremes_obs[as.character(1981:2015)]
+obs_df = as.data.frame(cbind(1981:2015,obs))
+colnames(obs_df) <- c('year', 'precipitation')
+ERA_sv = Extremes_ERA_sv$LSP[Extremes_ERA_sv$year < 2016] 
+ERA_sv_df = as.data.frame(cbind(1981:2015,ERA_sv))
+colnames(ERA_sv_df) <- c('year', 'precipitation')
+
+```
+
+```{r}
+unseen_timeseries <- function(ensemble, obs, ylab = "", title = "") {
+  year <- precipitation <- NULL
+  plot <- ggplot2::ggplot() +
+    ggplot2::geom_boxplot(
+      data = ensemble,
+      mapping = ggplot2::aes(
+        x = year, y = precipitation,
+        group = year,
+        fill = "UNSEEN"
+      ),
+      alpha = 0.3
+    ) + ## Seas5 color is defined manually
+    ggplot2::theme_classic() +
+    ggplot2::scale_fill_manual(name = NULL, values = c("UNSEEN" = "black")) + ## Here SEAS5 color is defined
+    ggplot2::scale_colour_manual(name = NULL, values = c("OBS" = "blue")) + ## And ERA5 color
+    ggplot2::ylab(ylab) +
+    ggplot2::ggtitle(title) +
+    ggplot2::theme(
+      legend.position = c(.95, .02),
+      legend.justification = c("right", "bottom"),
+      legend.spacing.y = ggplot2::unit(-0.2, "cm"),
+      legend.title = ggplot2::element_blank(),
+      # ) + # ,
+      text=element_text(size=7),
+      axis.text = element_text(size=7)
+      )+
+    ggplot2::guides(
+      color = ggplot2::guide_legend(order = 1),
+      fill = ggplot2::guide_legend(order = 2)
+    )
+  if (is.null(obs) == FALSE){
+    plot <- plot +
+      ggplot2::geom_point(
+        data = obs,
+        ggplot2::aes(
+          x = year,
+          y = precipitation,
+          col = "OBS"
+        ),
+        shape = 4,
+        size = 2,
+        stroke = 1.5
+      )
+  }
+  return(plot)
+}
+
+```
+
+```{r}
+WC= unseen_timeseries(ensemble = df_WC, obs = obs_df, title = 'Norway')#%>%
+   # ggsave(filename = "../graphs/timeseries_wc.png",width =180,height = 180, units='mm',dpi=300)
+SV = unseen_timeseries(ensemble = df_SV, obs = NULL, title = 'Svalbard')#%>%
+   # ggsave(filename = "../graphs/timeseries_sv.png",width =180,height = 180, units='mm',dpi=300)
+
+ggpubr::ggarrange(WC,SV,
+          labels = c("b","c"),
+          font.label = list(size = 7, color = "black", face ="bold", family = NULL),
+          common.legend = T,
+          ncol = 1, nrow = 2)%>%
+   ggsave(filename = "../graphs/timeseries2.png",width =100,height = 180, units='mm',dpi=300)
+
+
+```

@@ -229,6 +229,11 @@ p_trend_wc=
 
 
 ```
+```{r}
+ci_wc
+ci_wc_biascor
+``` 
+
 
 And for Svalbard
 

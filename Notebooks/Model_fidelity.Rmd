@@ -149,7 +149,7 @@ The boottest for the Western Norway compared to SeNorge.
 ```{r}
 
 boottest_plot(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs, fontsize = 7)%>%
-    ggsave(filename = "../graphs/Fidelity_UNSEEN_combined_7.png",width =180,height = 180, units='mm',dpi=300)
+    ggsave(filename = "../graphs/Fidelity_UNSEEN_combined_7.pdf",width =180,height = 120, units='mm',dpi=300)
 ```
 
 The boottest for the Svalbard compared to ERA5.
@@ -193,9 +193,9 @@ EVT_plot <- function(obs=obs,GEV_type) {
   ##Now calculate the return levels and their confidence intervals for each return period within rperiods
   rperiods = c(seq(from = 1.01, to = 1.5, by =0.1),1.7,2,3, 5, 10, 20, 50, 80, 100, 120, 200, 250, 300, 500, 800,2000,5000)
   
-  rvs_obs=ci.fevd(fit_obs,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal") 
+  rvs_obs=ci.fevd(fit_obs,alpha = 0.05,type='return.level',return.period = rperiods,method ="boot") 
   colnames(rvs_obs) = c('Obs_l','Obs','Obs_h') #Rename the col
-  rvs_Seas5=ci.fevd(fit_Seas5,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal")
+  rvs_Seas5=ci.fevd(fit_Seas5,alpha = 0.05,type='return.level',return.period = rperiods,method ="boot")
   colnames(rvs_Seas5) = c('S5_l','S5','S5_h') #Rename the column
   rvs_Seas5_biascorr=ci.fevd(fit_Seas5_biascorr,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal")
   colnames(rvs_Seas5_biascorr) = c('S5_corrected_l','S5_corrected','S5_corrected_h') #Rename the column
@@ -242,7 +242,7 @@ EVT_plot <- function(obs=obs,GEV_type) {
 }
 
 p1=EVT_plot(obs=obs,GEV_type = 'GEV')
-ggsave(p1,filename = "../graphs/Fidelity_EVT.png",width =88,height = 100, units='mm',dpi=300)
+# ggsave(p1,filename = "../graphs/Fidelity_EVT_boot.pdf",width =88,height = 100, units='mm',dpi=300)
 p1
 
 
@@ -301,8 +301,8 @@ ggarrange(p2, p1,p3,
           labels = c("a", "b","c"),
           font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           ncol = 1, nrow = 3,
-          common.legend = TRUE) #%>%
-# ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =180,height = 210,units = 'mm' )
+          common.legend = TRUE) %>%
+ggsave(filename = "../graphs/Fidelity_sensitivity_boot.pdf",width =180,height = 210,units = 'mm' )
 # ggsave(p2,filename = "../graphs/Fidelity_Gumbel.png")
 # ggsave(p3,filename = "../graphs/Fidelity_obs_adjusted.png")
 

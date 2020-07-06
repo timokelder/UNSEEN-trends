@@ -18,7 +18,7 @@ In this notebook, we assess the model fidelity of the SEAS5 UNSEEN ensemble over
 # plotdir=paste0(dir,'/statistics/multiday/plots')
 # dir='/home/timok/ensex'
 # plotdir='/home/timok/Documents/ensex/R/graphs'
-dir='C:/Users/gytk3/OneDrive - Loughborough University/GitHub/EnsEx/Data'
+dir='C:/Users/timo/OneDrive - Loughborough University/GitHub/UNSEEN-trends/Data'
 
 source('Load_data.R')
 library(moments)
@@ -35,6 +35,8 @@ names(dimnames(Extremes_SV)) <- c('Member', 'Leadtime', 'Year')
 df_WC=adply(Extremes_WC, 1:3) ## Convert the array with extremes to a data frame 
 df_SV=adply(Extremes_SV, 1:3)
 obs=Extremes_obs[as.character(1981:2015)]
+ERA_wc = Extremes_ERA_wc$LSP[Extremes_ERA_wc$year < 2016] *1000
+ERA_sv = Extremes_ERA_sv$LSP[Extremes_ERA_sv$year < 2016] 
 
 ```
 
@@ -105,8 +107,9 @@ ggarrange(p1_cor,p2_cor,p3_cor,p4_cor,
 ##Combine the plots
 
 ```{r}
-
-plot_hist_combined <- function(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun,main,units,fontsize) {
+boottest_plot <- function(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1, obs2 = NULL, fontsize = 11) {
+  
+plot_hist_combined <- function(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1, obs2 ,fun,main,units,fontsize) {
   bootstrapped_fun=apply(bootstrapped_array_WC,MARGIN = 2,FUN = fun)
   bootstrapped_fun_biascor=apply(bootstrapped_array_WC_biascor,MARGIN = 2,FUN = fun)
   ggplot()+
@@ -115,9 +118,11 @@ plot_hist_combined <- function(bootstrapped_array_WC,bootstrapped_array_WC_biasc
               color="black", linetype="dashed", size=1)+
     geom_histogram(aes(x=bootstrapped_fun_biascor),color='black',fill='orange',alpha=0.5,bins=30)+
     geom_vline(aes(xintercept=quantile(bootstrapped_fun_biascor,probs = c(0.025,0.975))),
-              color="orange", linetype="dashed", size=1)+
-    geom_vline(aes(xintercept=fun(obs)),
+    color="orange", linetype="dashed", size=1)+
+    geom_vline(aes(xintercept=fun(obs1)),
               color="blue", size=2)+
+    # geom_vline(aes(xintercept=fun(obs2)),
+    #           color="green", size=2)+
     labs(title=main,y= 'Number of bootstrapped series',x =paste0("SON-3DP (",units,")"))+
     theme_classic()+
     theme(text=element_text(size=fontsize),
@@ -126,17 +131,42 @@ plot_hist_combined <- function(bootstrapped_array_WC,bootstrapped_array_WC_biasc
 }
 
 
-p1_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=mean,main = 'Mean',units = 'mm',fontsize=14)
-p2_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=sd,main = 'Standard Deviation',units = 'mm',fontsize=14)
-p3_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=skewness,main = 'Skewness',units = '-',fontsize=14)
-p4_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor,fun=kurtosis,main = 'Kurtosis',units = '-',fontsize=14)
+p1_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs1, obs2 = NULL, fun=mean,main = 'Mean',units = 'mm',fontsize=fontsize)
+p2_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs1, obs2 = NULL, fun=sd,main = 'Standard Deviation',units = 'mm',fontsize=fontsize)
+p3_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs1, obs2 = NULL, fun=skewness,main = 'Skewness',units = '-',fontsize=fontsize)
+p4_comb=plot_hist_combined(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs1, obs2 = NULL, fun=kurtosis,main = 'Kurtosis',units = '-',fontsize=fontsize)
 
 ggarrange(p1_comb,p2_comb,p3_comb,p4_comb,
           labels = c("a", "b","c","d"),
-          font.label = list(size = 14, color = "black", face ="bold", family = NULL),
-          ncol = 2, nrow = 2)%>%
-    ggsave(filename = "../graphs/Fidelity_UNSEEN_combined.png",width =180,height = 180, units='mm',dpi=300)
+          font.label = list(size = fontsize, color = "black", face ="bold", family = NULL),
+          ncol = 2, nrow = 2) 
+}
 
+
+```
+
+The boottest for the Western Norway compared to SeNorge.
+```{r}
+
+boottest_plot(bootstrapped_array_WC,bootstrapped_array_WC_biascor, obs1 = obs, fontsize = 7)%>%
+    ggsave(filename = "../graphs/Fidelity_UNSEEN_combined_7.pdf",width =180,height = 120, units='mm',dpi=300)
+```
+
+The boottest for the Svalbard compared to ERA5.
+```{r}
+mean(ERA_sv)/mean(df_SV$V1)
+
+extremes_sv_biascor= df_SV$V1 * mean(ERA_sv)/mean(df_SV$V1) ## we create a mean bias corrected series  
+
+#Bootstraps the series to 35 years length with n= 10.000 
+bootstrapped_series_SV=sample(df_SV$V1,size = 35*10000,replace = T) #For WC
+bootstrapped_series_SV_biascor=sample(extremes_sv_biascor,size = 35*10000,replace = T) #For WC
+bootstrapped_array_SV=array(bootstrapped_series_SV,dim = c(35,10000)) #Creates an array with 10.000 series of 35 values
+bootstrapped_array_SV_biascor=array(bootstrapped_series_SV_biascor,dim = c(35,10000)) #Same for the mean bias corrected series
+
+
+boottest_plot(bootstrapped_array_SV,bootstrapped_array_SV_biascor, obs1 = ERA_sv)#%>%
+     # ggsave(filename = "../graphs/Fidelity_UNSEEN_SV.pdf",width =180,height = 180, units='mm',dpi=300)
 ```
 
 
@@ -163,9 +193,9 @@ EVT_plot <- function(obs=obs,GEV_type) {
   ##Now calculate the return levels and their confidence intervals for each return period within rperiods
   rperiods = c(seq(from = 1.01, to = 1.5, by =0.1),1.7,2,3, 5, 10, 20, 50, 80, 100, 120, 200, 250, 300, 500, 800,2000,5000)
   
-  rvs_obs=ci.fevd(fit_obs,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal") 
+  rvs_obs=ci.fevd(fit_obs,alpha = 0.05,type='return.level',return.period = rperiods,method ="boot") 
   colnames(rvs_obs) = c('Obs_l','Obs','Obs_h') #Rename the col
-  rvs_Seas5=ci.fevd(fit_Seas5,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal")
+  rvs_Seas5=ci.fevd(fit_Seas5,alpha = 0.05,type='return.level',return.period = rperiods,method ="boot")
   colnames(rvs_Seas5) = c('S5_l','S5','S5_h') #Rename the column
   rvs_Seas5_biascorr=ci.fevd(fit_Seas5_biascorr,alpha = 0.05,type='return.level',return.period = rperiods,method ="normal")
   colnames(rvs_Seas5_biascorr) = c('S5_corrected_l','S5_corrected','S5_corrected_h') #Rename the column
@@ -212,7 +242,7 @@ EVT_plot <- function(obs=obs,GEV_type) {
 }
 
 p1=EVT_plot(obs=obs,GEV_type = 'GEV')
-ggsave(p1,filename = "../graphs/Fidelity_EVT.png",width =88,height = 100, units='mm',dpi=300)
+# ggsave(p1,filename = "../graphs/Fidelity_EVT_boot.pdf",width =88,height = 100, units='mm',dpi=300)
 p1
 
 
@@ -271,8 +301,8 @@ ggarrange(p2, p1,p3,
           labels = c("a", "b","c"),
           font.label = list(size = 7, color = "black", face ="bold", family = NULL),
           ncol = 1, nrow = 3,
-          common.legend = TRUE) #%>%
-# ggsave(filename = "../graphs/Fidelity_sensitivity.png",width =180,height = 210,units = 'mm' )
+          common.legend = TRUE) %>%
+ggsave(filename = "../graphs/Fidelity_sensitivity_boot.pdf",width =180,height = 210,units = 'mm' )
 # ggsave(p2,filename = "../graphs/Fidelity_Gumbel.png")
 # ggsave(p3,filename = "../graphs/Fidelity_obs_adjusted.png")
 

@@ -76,7 +76,7 @@ for (i in 1:35){
 }
   
 ## we create a mean bias corrected series  
-bootstrapped_array_WC_biascor= bootstrapped_series_WC * mean(obs)/mean(df_WC$V1) 
+bootstrapped_array_WC_biascor= bootstrapped_array_WC * mean(obs)/mean(df_WC$V1) 
 
 ``` 
 
@@ -197,8 +197,8 @@ And plot the boottest after remove the wrong fits
 ``` {r}
 boottest_after = boottest(bootstrapped_fit = bootstrapped_fit_criteria, bootstrapped_fit_biascor = bootstrapped_fit_biascor_criteria, fit_obs =
                                       fit_obs, shape_scale = FALSE, fontsize = 7)  
-boottest_after %>% 
-  ggsave(filename = '../graphs/Fidelity_UNSEEN_GEV_after_7.pdf',width =180,height = 120, units='mm',dpi=300)
+boottest_after #%>%
+#   ggsave(filename = '../graphs/Fidelity_UNSEEN_GEV_after_7.pdf',width =180,height = 120, units='mm',dpi=300)
 
 # ggsave(filename = "../../../PhD/Work/UNSEEN-trends/graphs/Fidelity_UNSEEN_GEV_after_crit.png",width =180,height = 120, units='mm',dpi=300) #
 ```
@@ -291,8 +291,8 @@ boottest_after_nonstat = boottest_nonstat(bootstrapped_fit = bootstrapped_fit_cr
                                           fit_obs = fit_obs_nonstat,
                                           shape_scale = FALSE,
                                           fontsize = 7)  
-boottest_after_nonstat %>% 
-  ggsave(filename = '../graphs/Fidelity_UNSEEN_GEV_nonstat_after_7.png',width =180,height = 180, units='mm',dpi=300)
+boottest_after_nonstat #%>% 
+  # ggsave(filename = '../graphs/Fidelity_UNSEEN_GEV_nonstat_after_7.png',width =180,height = 180, units='mm',dpi=300)
 
 # boottest_after_nonstat %>%
 #   ggsave(filename = "../../../PhD/Work/UNSEEN-trends/graphs/Fidelity_GEV_nonstat_after_criteria_units-7.png",width =180,height = 180, units='mm',dpi=300)
@@ -321,8 +321,8 @@ trend_percent <- function(fit, vals, rp) {
   rvs_nonstat=ci(fit,alpha = 0.05,type='return.level',return.period = rp,method ="normal",qcov=qcovs[2,],qcov.base=qcovs[1,])  #Calculate the return values and confidence intervals for each year
   rvs_nonstat_base=ci(fit,alpha = 0.05,type='return.level',return.period = rp,method ="normal",qcov=qcovs[1,])  #Calculate the return values and confidence intervals for each
   rvs_nonstat_trend_percent=100*rvs_nonstat/rvs_nonstat_base[2]
-  return(print(paste('Observed trend and uncertainty:', as.character(rvs_obs_trend_percent[1,2]),
-              as.character(rvs_obs_trend_percent[1,1]),as.character(rvs_obs_trend_percent[1,3]))))
+  return(print(paste('Observed trend and uncertainty:', as.character(rvs_nonstat_trend_percent[1,2]),
+              as.character(rvs_nonstat_trend_percent[1,1]),as.character(rvs_nonstat_trend_percent[1,3]))))
 }
 
 
